@@ -1,0 +1,147 @@
+/* src/App.module.css */
+
+/* --- Main Layout & Structure --- */
+.appContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8f9fa; /* Light grey background for the whole page */
+}
+
+.mainContent {
+  flex-grow: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* --- Header & Navigation --- */
+.header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #dee2e6;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary); /* Uses color from index.css */
+  text-decoration: none;
+}
+
+.logoIcon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navLink {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #495057;
+  text-decoration: none;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.navLink:hover {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* --- Buttons --- */
+.navButton {
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  background: none;
+  color: #495057;
+}
+
+.navButton:hover {
+  color: var(--primary);
+  background-color: #f1f3f5;
+}
+
+/* --- Welcome Page Specifics --- */
+.welcomePage {
+  text-align: center;
+  padding: 4rem 1rem;
+  background-color: #fff;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.welcomePage h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.welcomePage p {
+  font-size: 1.2rem;
+  color: #6c757d;
+  margin-top: 0.5rem;
+}
+
+/* --- Footer --- */
+.footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 0.8rem;
+  color: #adb5bd;
+  background-color: #ffffff;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Add this to the end of src/App.module.css */
+.chatbotToggleButton {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 999;
+    transition: transform 0.2s;
+}
+.chatbotToggleButton:hover {
+    transform: scale(1.1);
+}

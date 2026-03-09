@@ -1,0 +1,16 @@
+/* src/components/FirstAid.module.css */
+.container { max-width: 800px; margin: 0 auto; }
+.loading { text-align: center; padding: 2rem; font-size: 1.2rem; }
+.searchBar { width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); margin-bottom: 2rem; }
+.articleList { display: grid; gap: 1rem; }
+.articleCard { display: block; background: var(--card); padding: 1.5rem; border-radius: var(--border-radius); text-decoration: none; color: inherit; border-left: 5px solid var(--secondary); transition: box-shadow 0.2s, transform 0.2s; }
+.articleCard:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.1); transform: translateY(-3px); }
+.articleCard h2 { margin: 0.5rem 0; font-size: 1.25rem; }
+.articleCard p { color: #6c757d; font-size: 0.9rem; }
+.articleCard span { font-weight: 600; color: var(--primary); }
+.categoryTag { display: inline-block; background-color: #f1f3f5; color: #495057; padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; }
+.backLink { display: inline-block; margin-bottom: 1.5rem; font-weight: 600; color: var(--primary); text-decoration: none; }
+.articleContent { background: var(--card); padding: 2rem; border-radius: var(--border-radius); }
+.articleContent h1 { margin-top: 0; }
+.articleContent h3 { margin-top: 2rem; border-bottom: 2px solid #f1f3f5; padding-bottom: 0.5rem; }
+.articleContent li { line-height: 1.6; }

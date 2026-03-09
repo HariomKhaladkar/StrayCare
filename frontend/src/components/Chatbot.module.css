@@ -1,0 +1,14 @@
+/* src/components/Chatbot.module.css */
+.chatWindow { position: fixed; bottom: 20px; right: 20px; width: 350px; height: 500px; background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; z-index: 1000; }
+.chatHeader { background: var(--primary); color: white; padding: 1rem; border-top-left-radius: 15px; border-top-right-radius: 15px; display: flex; justify-content: space-between; align-items: center; }
+.chatHeader h3 { margin: 0; font-size: 1.1rem; }
+.closeButton { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+.chatMessages { flex-grow: 1; padding: 1rem; overflow-y: auto; }
+.message { margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 18px; max-width: 80%; line-height: 1.5; }
+.user { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; margin-left: auto; }
+.ai { background-color: #f1f3f5; color: var(--foreground); align-self: flex-start; border-bottom-left-radius: 4px; }
+.typing { color: #6c757d; font-style: italic; }
+.chatInputForm { display: flex; padding: 1rem; border-top: 1px solid var(--border-color); }
+.chatInputForm input { flex-grow: 1; border: 1px solid #ccc; border-radius: 18px; padding: 0.75rem; }
+.chatInputForm button { background: var(--primary); color: white; border: none; border-radius: 18px; padding: 0.75rem 1.25rem; margin-left: 0.5rem; cursor: pointer; }
+.chatInputForm button:disabled { opacity: 0.5; }

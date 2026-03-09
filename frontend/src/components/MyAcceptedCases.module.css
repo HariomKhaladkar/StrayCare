@@ -1,0 +1,13 @@
+/* src/components/MyAcceptedCases.module.css */
+.container { max-width: 1200px; margin: 0 auto; }
+.subtitle { color: #6c757d; margin-top: -1rem; margin-bottom: 2rem; }
+.loading, .error { text-align: center; padding: 2rem; font-size: 1.2rem; }
+.error { color: var(--primary); }
+.caseGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+.caseCard { background: var(--card); border-radius: var(--border-radius); box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
+.caseCard img { width: 100%; height: 200px; object-fit: cover; }
+.cardContent { padding: 1rem; }
+.cardContent h3 { margin-top: 0; }
+.cardContent p { color: #495057; font-size: 0.9rem; }
+.detailsButton { display: inline-block; margin-top: 1rem; background-color: var(--secondary); color: white; text-decoration: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
+.detailsButton:hover { background-color: #248a7f; }

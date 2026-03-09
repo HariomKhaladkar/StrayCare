@@ -1,0 +1,148 @@
+/* frontend/src/components/ReportCase.module.css */
+.card {
+    background-color: #ffffff;
+    padding: 2rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Enhanced shadow */
+    border-radius: 0.75rem;
+    max-width: 42rem;
+    margin: 2rem auto;
+    border: 1px solid #e5e7eb; /* Added a subtle border for better definition */
+}
+
+.title {
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: #1f2937;
+    text-align: center; /* Centered title */
+}
+
+.subtitle {
+    font-size: 1rem; /* Slightly larger for readability */
+    color: #6c757d;
+    margin-bottom: 2.5rem; /* Increased margin */
+    text-align: center; /* Centered subtitle */
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.formGroup {
+    width: 100%;
+}
+
+.label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.textarea,
+.input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-size: 1rem; /* Consistent font size */
+}
+
+.textarea:focus,
+.input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Softer, more prominent focus ring */
+}
+
+.submitButton {
+    width: 100%;
+    padding: 0.875rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    background-color: #3b82f6;
+    color: #ffffff;
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s; /* Added more transitions */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Added subtle shadow to lift the button */
+    transform: translateY(0);
+}
+
+.submitButton:hover:not(:disabled) {
+    background-color: #1e40af;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); /* Larger shadow on hover */
+    transform: translateY(-2px); /* Lift effect on hover */
+}
+
+.submitButton:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4); /* Consistent focus outline */
+}
+
+.submitButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.successMessage {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    background-color: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #a3cfbb;
+}
+
+.errorMessage {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    background-color: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
+}
+
+/* --- Location Button Styles --- */
+.locationButton {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #ced4da;
+    background-color: #f8f9fa;
+    color: #1f2937;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.locationButton:hover:not(:disabled) {
+    background-color: #e9ecef;
+}
+
+.locationButton:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Consistent focus outline */
+}
+
+.locationButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.locationSuccess {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #059669; /* green-700 */
+    text-align: center;
+    margin-top: 0.75rem;
+}
+

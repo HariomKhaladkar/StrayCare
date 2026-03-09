@@ -1,0 +1,219 @@
+/* src/components/CaseDetail.module.css */
+
+/* --- Main Layout --- */
+.container {
+    background-color: var(--card);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.loading, .error {
+    text-align: center;
+    font-size: 1.2rem;
+    padding: 3rem;
+    color: #6c757d;
+}
+.error {
+    color: var(--primary);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+}
+
+/* Make it single-column on smaller screens */
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Columns --- */
+.imageColumn img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.detailsColumn .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.detailsColumn h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--foreground);
+}
+
+/* --- Status Badges --- */
+.status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+.pending { background-color: #fff3cd; color: #664d03; }
+.accepted { background-color: #d1e7dd; color: #0f5132; }
+.rejected { background-color: #f8d7da; color: #842029; }
+
+.description {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #495057;
+}
+
+.addUpdateButton {
+    width: 100%;
+    background-color: var(--secondary);
+    color: white;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 1.5rem 0;
+    transition: background-color 0.2s;
+}
+.addUpdateButton:hover {
+    background-color: #248a7f;
+}
+
+/* --- Timeline Styles --- */
+.timeline {
+    margin-top: 2rem;
+    position: relative;
+    border-top: 1px solid var(--border-color);
+    padding-top: 2rem;
+}
+
+/* The vertical line */
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 2rem;
+    bottom: 0;
+    width: 4px;
+    background-color: #e9ecef;
+    border-radius: 2px;
+}
+
+.noUpdates {
+    color: #6c757d;
+    font-style: italic;
+    padding-left: 2.5rem;
+}
+
+.timelineItem {
+    position: relative;
+    margin-bottom: 1.5rem;
+    padding-left: 40px; /* Creates space for the dot and line */
+}
+
+.timelineDot {
+    position: absolute;
+    /* Position the dot's left edge at the same spot as the line */
+    left: 10px; 
+    top: 5px;
+    /* This transform pulls the dot back by half its width, centering it perfectly on the line */
+    transform: translateX(-50%); 
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--secondary);
+    border: 3px solid var(--card);
+}
+
+
+.timestamp {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.timelineContent p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.timelineContent img {
+    max-width: 250px;
+    margin-top: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.timeline h2 {
+    padding-left: 40px; /* Aligns the heading with the timeline items */
+    margin-bottom: 1.5rem; /* Adds some space below the heading */
+}
+
+/* --- Modal Styles --- */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.modalContent {
+    background: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.modalContent h2 {
+    margin-top: 0;
+}
+.modalTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    font-family: 'Inter', sans-serif;
+}
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.cancelButton, .submitButton {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+.cancelButton {
+    background-color: #f1f3f5;
+    color: var(--foreground);
+}
+.submitButton {
+    background-color: var(--primary);
+    color: white;
+}
+.submitButton:disabled {
+    opacity: 0.5;
+}

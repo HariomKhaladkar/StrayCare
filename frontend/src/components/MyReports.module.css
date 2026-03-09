@@ -1,0 +1,123 @@
+/* frontend/src/components/MyReports.module.css */
+.container {
+    width: 100%;
+    max-width: 900px; /* Centered, comfortable width */
+    margin: 0 auto;
+}
+
+.title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.caseList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.caseItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    padding: 0.25rem 1rem; /* Even smaller vertical padding */
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.caseItem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.caseContent {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.caseImage {
+    width: 1rem; /* 48px - Further reduced size */
+    height: 1rem; /* 48px - Further reduced size */
+    /*object-fit: cover;*/
+    border-radius: 0.5rem;
+    flex-shrink: 0;
+}
+
+.caseDetails p {
+    color: #374151; /* gray-700 */
+    margin: 0; /* Remove default paragraph margin */
+}
+
+.status {
+    display: inline-block;
+    margin-top: 0.125rem; /* Tighter margin */
+    padding: 0.125rem 0.625rem; /* Slightly smaller padding */
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+}
+
+.status.accepted {
+    background-color: #d1fae5; /* green-200 */
+    color: #065f46; /* green-800 */
+}
+.status.rejected {
+    background-color: #fee2e2; /* red-200 */
+    color: #991b1b; /* red-800 */
+}
+.status.pending {
+    background-color: #fef3c7; /* yellow-200 */
+    color: #92400e; /* yellow-800 */
+}
+
+.actions {
+    display: flex;
+    flex-direction: row; /* Changed from column */
+    align-items: center;
+    gap: 0.75rem; /* Reduced gap */
+}
+
+.detailsButton, .feedbackButton {
+    padding: 0.375rem 0.875rem; /* 6px 14px - Further reduced button padding */
+    border-radius: 0.375rem; /* smaller radius */
+    font-weight: 600;
+    font-size: 0.875rem; /* smaller font */
+    text-decoration: none;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap; /* Prevents button text from wrapping */
+}
+
+.detailsButton {
+    background-color: #3b82f6; /* blue-500 */
+    color: white;
+}
+.detailsButton:hover {
+    background-color: #1e40af; /* blue-800 */
+}
+
+.feedbackButton {
+    background-color: #facc15; /* yellow-400 */
+    color: #1f2937;
+}
+.feedbackButton:hover {
+    background-color: #f59e0b; /* yellow-500 */
+}
+
+.emptyState {
+    text-align: center;
+    padding: 3rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    color: #6b7280;
+}
+
