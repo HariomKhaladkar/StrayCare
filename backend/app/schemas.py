@@ -44,6 +44,10 @@ class Case(CaseBase):
     adoption_story: Optional[str] = None
     temperament: Optional[str] = None
 
+    # Feature 3: Severity Triaging
+    severity_score: int = 0
+    severity_label: str = "Low"
+
     class Config:
         orm_mode = True
 
@@ -79,7 +83,8 @@ class NGO(NGOBase):
     id: int
     is_verified: bool
     verification_document_url: Optional[str] = None
-    razorpay_account_id: Optional[str] = None  # ✅ NEW FIELD
+    razorpay_account_id: Optional[str] = None
+    upi_id: Optional[str] = None  # e.g. "testngo@upi"
 
     class Config:
         orm_mode = True
@@ -97,8 +102,13 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class ChatMessage(BaseModel):
+    role: str   # "user" or "model"
+    text: str
+
 class ChatQuery(BaseModel):
     query: str
+    history: List[ChatMessage] = []
 
 class ChatResponse(BaseModel):
     response: str
@@ -112,6 +122,9 @@ class NGOLoginResponse(BaseModel):
     access_token: str
     token_type: str
     ngo: NGO
+
+class GoogleLoginRequest(BaseModel):
+    credential: str
 
 
 # ---------------- Pet ----------------
@@ -134,10 +147,19 @@ class Pet(PetBase):
     status: str
     ngo_id: int
     image_url: str
+    video_url: Optional[str] = None
 
     class Config:
         orm_mode = True
 
+class MatchProfile(BaseModel):
+    living_space: str  # "apartment" | "house"
+    activity_level: str # "low" | "medium" | "high"
+    has_kids: bool
+
+class PetMatchResponse(BaseModel):
+    pet: Pet
+    match_percentage: int
 
 # ---------------- Adoption Requests ----------------
 
@@ -163,9 +185,18 @@ class AdoptionRequest(AdoptionRequestCreate):
 
 # ---------------- Feedback ----------------
 
+FEEDBACK_CATEGORIES = [
+    "Response Time",
+    "Treatment Quality",
+    "Communication",
+    "Adoption Process",
+    "Overall Experience",
+]
+
 class FeedbackBase(BaseModel):
     rating: conint(ge=1, le=5)
     comment: Optional[str] = None
+    category: Optional[str] = None
     ngo_id: int
     case_id: int
 
@@ -176,14 +207,23 @@ class Feedback(FeedbackBase):
     id: int
     created_at: datetime
     user_id: int
+    ngo_response: Optional[str] = None
 
     class Config:
         orm_mode = True
+
+class RatingDistribution(BaseModel):
+    star: int
+    count: int
 
 class FeedbackSummary(BaseModel):
     average_rating: Optional[float] = None
     total_reviews: int
     reviews: List[Feedback] = []
+    rating_distribution: List[RatingDistribution] = []
+
+class NGOFeedbackRespond(BaseModel):
+    response: str
 
 
 # ---------------- Donations ----------------
@@ -215,6 +255,107 @@ class NGODonationStats(BaseModel):
     email: str
     verification_document_url: Optional[str]
     total_donations_last_30_days: float
+    upi_id: Optional[str] = None  # for direct UPI deep-link fallback
 
     class Config:
         orm_mode = True
+
+
+# ---------------- User Pet Listings ----------------
+
+class UserPetListingCreate(BaseModel):
+    name: str
+    species: str
+    age: str
+    location: str
+    description: Optional[str] = None
+
+class UserPetListing(UserPetListingCreate):
+    id: int
+    image_url: str
+    status: str
+    created_at: datetime
+    user_id: int
+    user_name: Optional[str] = None   # submitting citizen's name
+
+    class Config:
+        orm_mode = True
+
+
+# ---------------- Donor Analytics ----------------
+
+class MonthwiseDonation(BaseModel):
+    month: str
+    amount: float
+
+class YearwiseDonation(BaseModel):
+    year: str
+    amount: float
+
+class CaseStats(BaseModel):
+    total_cases: int
+    resolved_cases: int
+    active_cases: int
+
+class AdoptionStats(BaseModel):
+    total_adoptions: int
+    available_pets: int
+    ngo_count: int
+
+
+# ---------------- Donor Verification ----------------
+
+class DonorVerifyRequest(BaseModel):
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+class DonorCodeConfirm(BaseModel):
+    code: str
+
+class DonorVerificationStatus(BaseModel):
+    id: int
+    user_id: int
+    email_verified: bool
+    phone_verified: bool
+    phone_number: Optional[str] = None
+    verification_status: str
+    verified_at: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
+
+
+# ---------------- Analytics Time Series ----------------
+
+class TimeCount(BaseModel):
+    label: str
+    count: int
+
+class TimeAmount(BaseModel):
+    label: str
+    amount: float
+
+class SpeciesCount(BaseModel):
+    species: str
+    count: int
+
+# NGO analytics combined response
+class NGOCaseAnalytics(BaseModel):
+    yearwise: List[TimeCount]
+    monthwise: List[TimeCount]
+
+class AdminCaseAnalytics(BaseModel):
+    total: int
+    resolved: int
+    pending: int
+    accepted: int
+    monthwise: List[TimeCount]
+
+class AdminDonationAnalytics(BaseModel):
+    total_amount: float
+    monthwise: List[TimeAmount]
+
+class AdminAdoptionAnalytics(BaseModel):
+    total_adopted: int
+    available: int
+    monthwise: List[TimeCount]

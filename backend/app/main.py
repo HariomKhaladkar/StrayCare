@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+import json
 import shutil
 import uuid
 from datetime import datetime, timezone
@@ -29,11 +30,14 @@ if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 
-# --- Local Application Imports ---
 from . import crud, models, schemas, security
 from .database import SessionLocal, engine
 from .first_aid_data import ARTICLES
 from . import chatbot_logic
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "YOUR_GOOGLE_CLIENT_ID")
 
 # Tell SQLAlchemy to create all the database tables based on our models
 models.Base.metadata.create_all(bind=engine)
@@ -44,7 +48,17 @@ app = FastAPI(title="StrayCare")
 # --- CORS (Cross-Origin Resource Sharing) Middleware ---
 origins = [
     "http://localhost:3000",
-    "https://straycare-frontend.vercel.app"
+    "https://straycare-frontend.vercel.app",
+    # Capacitor Android app origins
+    "capacitor://localhost",
+    "https://localhost",
+    "http://localhost",
+    # Local LAN access (Android device on same Wi-Fi)
+    # Update these IPs if your PC's local IP changes
+    "http://192.168.1.7:3000",
+    "http://192.168.1.7:8000",
+    "http://192.168.1.39:3000",
+    "http://192.168.1.39:8000",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -66,44 +80,75 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 # --- Startup Event ---
 @app.on_event("startup")
 def startup_event():
-    from sqlalchemy import inspect
+    from sqlalchemy import inspect, text
     db = SessionLocal()
 
     inspector = inspect(engine)
 
-    # --- Check if tables exist ---
-    required_tables = ["ngos", "users", "pets", "donations", "cases"]
+    # --- Create any entirely new tables ---
+    models.Base.metadata.create_all(bind=engine)
+
+    # --- Safe Column Migration (SQLite ALTER TABLE) ---
+    def add_column_if_missing(table: str, column: str, col_type: str):
+        try:
+            existing_cols = [c["name"] for c in inspector.get_columns(table)]
+            if column not in existing_cols:
+                with engine.connect() as conn:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+                    conn.commit()
+                print(f"✅ Migrated: added '{column}' to '{table}'")
+        except Exception as e:
+            print(f"⚠️  Migration skipped '{table}.{column}': {e}")
+
+    add_column_if_missing("feedback", "category", "TEXT")
+    add_column_if_missing("feedback", "ngo_response", "TEXT")
+
+    # Pets table: add newer columns that may be missing on old DBs
+    add_column_if_missing("pets", "ngo_id", "INTEGER")
+    add_column_if_missing("pets", "video_url", "TEXT")
+
+    # Cases table: add newer columns
+    add_column_if_missing("cases", "pet_name", "TEXT")
+    add_column_if_missing("cases", "is_adoptable", "INTEGER DEFAULT 0")
+    add_column_if_missing("cases", "adoption_story", "TEXT")
+    add_column_if_missing("cases", "temperament", "TEXT")
+    add_column_if_missing("cases", "severity_score", "INTEGER DEFAULT 0")
+    add_column_if_missing("cases", "severity_label", "TEXT DEFAULT 'Low'")
+
+    # NGOs table: add upi_id for direct UPI fallback
+    add_column_if_missing("ngos", "upi_id", "TEXT")
+
+    # --- Check if tables exist (for logging only) ---
+    required_tables = ["ngos", "users", "pets", "donations", "cases", "feedback", "user_pet_listings", "notifications"]
     existing_tables = inspector.get_table_names()
-
     missing = [t for t in required_tables if t not in existing_tables]
-
-    # --- Create tables if missing ---
     if missing:
-        print(f"⚠️ Missing tables detected: {missing}")
-        print("➡ Creating all tables...")
-        models.Base.metadata.create_all(bind=engine)
+        print(f"[WARNING] Still missing tables after create_all: {missing}")
     else:
-        print("✅ All tables already exist.")
+        print("[OK] All tables and columns ready.")
 
     # --- Safe Seeding Logic ---
     try:
         # Create TEST NGO only if does NOT exist
         if not crud.get_ngo_by_email(db, "testngo@example.com"):
             crud.create_test_ngo(db)
-            print("✅ Test NGO seeded.")
+            print("[OK] Test NGO seeded.")
 
         # Create TEST ADMIN only if does NOT exist
         if not crud.get_user_by_email(db, "admin@straycare.com"):
             crud.create_test_admin(db)
-            print("✅ Test Admin seeded.")
+            print("[OK] Test Admin seeded.")
 
         # Seed pets only if no pets exist
         if db.query(models.Pet).count() == 0:
             crud.seed_pets(db)
-            print("🐶 Pet data seeded.")
+            print("[OK] Pet data seeded.")
+
+        # Seed food products
+        crud.seed_food_products(db)
 
     except Exception as e:
-        print("❌ Startup seeding failed:", e)
+        print("[ERROR] Startup seeding failed:", e)
 
     finally:
         db.close()
@@ -174,6 +219,25 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
     access_token = security.create_access_token(data={"sub": user.email, "scope": "user"})
     return {"access_token": access_token, "token_type": "bearer", "user": user}
 
+@app.post("/auth/google", response_model=schemas.LoginResponse)
+def google_auth(request: schemas.GoogleLoginRequest, db: Session = Depends(get_db)):
+    try:
+        # Verify the token with Google
+        idinfo = id_token.verify_oauth2_token(request.credential, google_requests.Request(), GOOGLE_CLIENT_ID)
+        email = idinfo['email']
+        name = idinfo.get('name', 'Google User')
+        
+        user = crud.get_user_by_email(db, email=email)
+        if not user:
+            # Create user automatically if they don't exist
+            user_data = schemas.UserCreate(name=name, email=email, password="GOOGLE_OAUTH_DUMMY_PASSWORD")
+            user = crud.create_user(db=db, user=user_data)
+            
+        access_token = security.create_access_token(data={"sub": user.email, "scope": "user"})
+        return {"access_token": access_token, "token_type": "bearer", "user": user}
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
+
 # --- NGO AUTH ROUTES ---
 
 @app.post("/ngos/register", response_model=schemas.NGO)
@@ -210,18 +274,100 @@ async def report_case(description: str = Form(...), latitude: float = Form(...),
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(photo.file, buffer)
     photo_url = f"uploads/{filename}"
-    
+
+    # Feature 3: Auto-compute severity from description
+    severity = calculate_severity_score(description)
+
     case_data = schemas.CaseCreate(description=description, latitude=latitude, longitude=longitude)
-    
-    return crud.create_user_case(db=db, case=case_data, user_id=current_user.id, photo_url=photo_url)
+    db_case = crud.create_user_case(db=db, case=case_data, user_id=current_user.id, photo_url=photo_url)
+
+    # Persist severity into the case record
+    db_case.severity_score = severity["score"]
+    db_case.severity_label = severity["label"]
+    db.commit()
+    db.refresh(db_case)
+
+    # 🔔 Notify all verified NGOs about the new case
+    all_ngos = db.query(models.NGO).filter(models.NGO.is_verified == True).all()
+    for ngo in all_ngos:
+        crud.create_notification(
+            db=db,
+            message=f"🚨 New case reported near ({db_case.latitude:.4f}, {db_case.longitude:.4f}) — {(db_case.description or '')[:60]}",
+            notif_type="new_case",
+            ngo_id=ngo.id,
+            case_id=db_case.id,
+        )
+    return db_case
 
 @app.get("/ngo/me/cases", response_model=List[schemas.Case])
 def get_ngo_cases(db: Session = Depends(get_db), current_ngo: schemas.NGO = Depends(get_current_ngo)):
-    return crud.get_ngo_cases(db=db, ngo_id=current_ngo.id)
+    cases = crud.get_ngo_cases(db=db, ngo_id=current_ngo.id)
+    # Feature 3: Sort by severity (Critical first) then by date
+    severity_order = {"Critical": 0, "High": 1, "Moderate": 2, "Low": 3}
+    cases.sort(key=lambda c: (severity_order.get(c.severity_label, 4), -(c.created_at.timestamp() if c.created_at else 0)))
+    return cases
 
 @app.get("/users/me/cases", response_model=List[schemas.Case])
 def read_user_cases(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     return db.query(models.Case).filter(models.Case.owner_id == current_user.id).all()
+
+@app.get("/users/me/profile")
+def get_user_profile(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    """
+    Returns the authenticated user's full profile summary:
+    personal info + case breakdown + donation history + adoption requests.
+    """
+    cases = db.query(models.Case).filter(models.Case.owner_id == current_user.id).all()
+    case_breakdown = {
+        "total": len(cases),
+        "pending":  sum(1 for c in cases if c.status == "Pending"),
+        "accepted": sum(1 for c in cases if c.status == "Accepted"),
+        "resolved": sum(1 for c in cases if c.status == "Resolved"),
+        "rejected": sum(1 for c in cases if c.status == "Rejected"),
+    }
+
+    donations = (
+        db.query(models.Donation)
+        .filter(models.Donation.donor_email == current_user.email, models.Donation.status == "Success")
+        .order_by(models.Donation.timestamp.desc())
+        .all()
+    )
+    donation_history = [
+        {
+            "id": d.id,
+            "amount": d.amount,
+            "ngo_id": d.ngo_id,
+            "timestamp": d.timestamp.isoformat() if d.timestamp else None,
+        }
+        for d in donations
+    ]
+
+    adoption_requests = (
+        db.query(models.AdoptionRequest)
+        .filter(models.AdoptionRequest.adopter_email == current_user.email)
+        .order_by(models.AdoptionRequest.request_date.desc())
+        .all()
+    )
+    adoption_history = [
+        {
+            "id": ar.id,
+            "pet_name": ar.pet_name,
+            "status": ar.status,
+            "request_date": ar.request_date.isoformat() if ar.request_date else None,
+        }
+        for ar in adoption_requests
+    ]
+
+    return {
+        "id": current_user.id,
+        "name": current_user.name,
+        "email": current_user.email,
+        "is_admin": current_user.is_admin,
+        "case_breakdown": case_breakdown,
+        "donation_history": donation_history,
+        "adoption_history": adoption_history,
+        "total_donated": sum(d["amount"] for d in donation_history),
+    }
 
 @app.get("/cases/{case_id}", response_model=schemas.Case)
 def read_case_details(case_id: int, db: Session = Depends(get_db)):
@@ -232,11 +378,31 @@ def read_case_details(case_id: int, db: Session = Depends(get_db)):
 
 @app.put("/case/{case_id}/accept", response_model=schemas.Case)
 def accept_case(case_id: int, db: Session = Depends(get_db), current_ngo: schemas.NGO = Depends(get_current_ngo)):
-    return crud.update_case_status(db=db, case_id=case_id, status="Accepted", ngo_id=current_ngo.id)
+    db_case = crud.update_case_status(db=db, case_id=case_id, status="Accepted", ngo_id=current_ngo.id)
+    # 🔔 Notify the citizen who reported this case
+    if db_case and db_case.owner_id:
+        crud.create_notification(
+            db=db,
+            message=f"✅ Your case #{case_id} has been accepted by {current_ngo.name}!",
+            notif_type="case_accepted",
+            user_id=db_case.owner_id,
+            case_id=case_id,
+        )
+    return db_case
 
 @app.put("/case/{case_id}/reject", response_model=schemas.Case)
 def reject_case(case_id: int, db: Session = Depends(get_db), current_ngo: schemas.NGO = Depends(get_current_ngo)):
-    return crud.update_case_status(db=db, case_id=case_id, status="Rejected", ngo_id=current_ngo.id)
+    db_case = crud.update_case_status(db=db, case_id=case_id, status="Rejected", ngo_id=current_ngo.id)
+    # 🔔 Notify the citizen
+    if db_case and db_case.owner_id:
+        crud.create_notification(
+            db=db,
+            message=f"❌ Case #{case_id} was marked 'Not possible right now' by {current_ngo.name}.",
+            notif_type="case_rejected",
+            user_id=db_case.owner_id,
+            case_id=case_id,
+        )
+    return db_case
 
 @app.post("/cases/{case_id}/updates", response_model=schemas.CaseUpdate)
 async def post_case_update(case_id: int, notes: str = Form(...), photo: UploadFile = File(None), db: Session = Depends(get_db), current_ngo: schemas.NGO = Depends(get_current_ngo)):
@@ -250,13 +416,182 @@ async def post_case_update(case_id: int, notes: str = Form(...), photo: UploadFi
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(photo.file, buffer)
         photo_url = f"uploads/{filename}"
-    return crud.create_case_update(db=db, notes=notes, case_id=case_id, ngo_id=current_ngo.id, photo_url=photo_url)
+    result = crud.create_case_update(db=db, notes=notes, case_id=case_id, ngo_id=current_ngo.id, photo_url=photo_url)
+    # 🔔 Notify the citizen who reported the case
+    if db_case.owner_id:
+        crud.create_notification(
+            db=db,
+            message=f"📋 {current_ngo.name} posted an update on your case #{case_id}: \"{notes[:60]}\"",
+            notif_type="case_update",
+            user_id=db_case.owner_id,
+            case_id=case_id,
+        )
+    return result
+
+@app.get("/cases/{case_id}/updates", response_model=List[schemas.CaseUpdate])
+def get_case_updates(case_id: int, db: Session = Depends(get_db)):
+    updates = db.query(models.CaseUpdate).filter(models.CaseUpdate.case_id == case_id).order_by(models.CaseUpdate.created_at.asc()).all()
+    return updates
+
+
+# --- NOTIFICATION ROUTES ---
+
+@app.get("/notifications/me")
+def get_my_notifications(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Citizen: returns their latest 20 notifications with unread count."""
+    notifs = crud.get_user_notifications(db=db, user_id=current_user.id)
+    unread = sum(1 for n in notifs if not n.is_read)
+    return {
+        "unread_count": unread,
+        "notifications": [
+            {
+                "id": n.id,
+                "message": n.message,
+                "type": n.type,
+                "is_read": n.is_read,
+                "case_id": n.case_id,
+                "created_at": n.created_at.isoformat() if n.created_at else None,
+            }
+            for n in notifs
+        ],
+    }
+
+@app.put("/notifications/read")
+def mark_my_notifications_read(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Citizen: marks all their notifications as read."""
+    crud.mark_user_notifications_read(db=db, user_id=current_user.id)
+    return {"message": "All notifications marked as read."}
+
+@app.get("/ngo/notifications/me")
+def get_ngo_notifications(db: Session = Depends(get_db), current_ngo: models.NGO = Depends(get_current_ngo)):
+    """NGO: returns their latest 20 notifications with unread count."""
+    notifs = crud.get_ngo_notifications(db=db, ngo_id=current_ngo.id)
+    unread = sum(1 for n in notifs if not n.is_read)
+    return {
+        "unread_count": unread,
+        "notifications": [
+            {
+                "id": n.id,
+                "message": n.message,
+                "type": n.type,
+                "is_read": n.is_read,
+                "case_id": n.case_id,
+                "created_at": n.created_at.isoformat() if n.created_at else None,
+            }
+            for n in notifs
+        ],
+    }
+
+@app.put("/ngo/notifications/read")
+def mark_ngo_notifications_read(db: Session = Depends(get_db), current_ngo: models.NGO = Depends(get_current_ngo)):
+    """NGO: marks all their notifications as read."""
+    crud.mark_ngo_notifications_read(db=db, ngo_id=current_ngo.id)
+    return {"message": "All notifications marked as read."}
+
+
+# --- RECOVERY STORIES (Public) ---
+
+@app.get("/stories")
+def get_recovery_stories(db: Session = Depends(get_db)):
+    """
+    Public: Returns all resolved cases that have at least one NGO update.
+    Powers the public Recovery Stories feed.
+    """
+    resolved_cases = (
+        db.query(models.Case)
+        .filter(models.Case.status == "Resolved")
+        .order_by(models.Case.created_at.desc())
+        .all()
+    )
+    stories = []
+    for case in resolved_cases:
+        updates = (
+            db.query(models.CaseUpdate)
+            .filter(models.CaseUpdate.case_id == case.id)
+            .order_by(models.CaseUpdate.created_at.asc())
+            .all()
+        )
+        ngo_name = None
+        if case.accepted_by_ngo_id:
+            ngo = db.query(models.NGO).filter(models.NGO.id == case.accepted_by_ngo_id).first()
+            ngo_name = ngo.name if ngo else None
+        stories.append({
+            "id": case.id,
+            "description": case.description,
+            "photo_url": case.photo_url,
+            "severity_label": case.severity_label or "Low",
+            "created_at": case.created_at.isoformat() if case.created_at else None,
+            "pet_name": case.pet_name,
+            "adoption_story": case.adoption_story,
+            "temperament": case.temperament,
+            "ngo_name": ngo_name,
+            "updates": [
+                {
+                    "id": u.id,
+                    "notes": u.notes,
+                    "photo_url": u.photo_url,
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
+                }
+                for u in updates
+            ],
+        })
+    return stories
+
+@app.post("/ngo/stories")
+async def post_ngo_story(
+    title: str = Form(...),
+    description: str = Form(...),
+    pet_name: str = Form(None),
+    photo: UploadFile = File(None),
+    video: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_ngo: schemas.NGO = Depends(get_current_ngo)
+):
+    photo_url = None
+    if photo:
+        filename = f"story_{uuid.uuid4()}_{os.path.basename(photo.filename)}"
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(photo.file, buffer)
+        photo_url = f"uploads/{filename}"
+
+    video_url = None
+    if video:
+        vid_filename = f"story_vid_{uuid.uuid4()}_{os.path.basename(video.filename)}"
+        vid_path = os.path.join(UPLOAD_DIR, vid_filename)
+        with open(vid_path, "wb") as buffer:
+            shutil.copyfileobj(video.file, buffer)
+        video_url = f"uploads/{vid_filename}"
+
+    story = {
+        "id": int(uuid.uuid4().int % 100000),
+        "title": title,
+        "description": description,
+        "pet_name": pet_name,
+        "photo_url": photo_url,
+        "video_url": video_url,
+        "ngo_name": current_ngo.name,
+        "created_at": __import__('datetime').datetime.utcnow().isoformat(),
+        "type": "ngo_story"
+    }
+    return story
+
 
 # --- SUPPORT ROUTES ---
 
 @app.get("/first-aid/articles")
 def get_first_aid_articles():
-    return [{"id": a["id"], "title": a["title"], "category": a["category"], "summary": a["summary"]} for a in ARTICLES]
+    return [
+        {
+            "id": a["id"],
+            "title": a["title"],
+            "category": a["category"],
+            "summary": a["summary"],
+            "video_url": a.get("video_url"),
+            "thumbnail": a.get("thumbnail"),
+        }
+        for a in ARTICLES
+    ]
 
 @app.get("/first-aid/articles/{article_id}")
 def get_first_aid_article_detail(article_id: int):
@@ -267,8 +602,78 @@ def get_first_aid_article_detail(article_id: int):
 
 @app.post("/chatbot/query", response_model=schemas.ChatResponse)
 async def chatbot_query(request: schemas.ChatQuery):
-    response_text = chatbot_logic.get_chatbot_response(request.query)
+    history = [msg.dict() for msg in request.history]
+    response_text = chatbot_logic.get_chatbot_response(request.query, history=history)
     return {"response": response_text}
+
+@app.get("/ngos/{ngo_id}/profile")
+def get_ngo_public_profile(ngo_id: int, db: Session = Depends(get_db)):
+    """
+    Public: Returns an NGO's public profile including name, verification status,
+    case count, pets listed, average rating, and recent reviews.
+    """
+    ngo = db.query(models.NGO).filter(models.NGO.id == ngo_id, models.NGO.is_verified == True).first()
+    if not ngo:
+        raise HTTPException(status_code=404, detail="NGO not found or not verified")
+
+    total_cases   = db.query(models.Case).filter(models.Case.accepted_by_ngo_id == ngo_id).count()
+    resolved_cases = db.query(models.Case).filter(
+        models.Case.accepted_by_ngo_id == ngo_id,
+        models.Case.status == "Resolved"
+    ).count()
+    pets_listed   = db.query(models.Pet).filter(models.Pet.ngo_id == ngo_id).count()
+    pets_adopted  = db.query(models.Pet).filter(
+        models.Pet.ngo_id == ngo_id, models.Pet.status == "Adopted"
+    ).count()
+
+    feedback_data = crud.get_feedback_for_ngo(db=db, ngo_id=ngo_id)
+
+    recent_pets = (
+        db.query(models.Pet)
+        .filter(models.Pet.ngo_id == ngo_id, models.Pet.status == "Available")
+        .limit(6)
+        .all()
+    )
+
+    return {
+        "id": ngo.id,
+        "name": ngo.name,
+        "email": ngo.email,
+        "is_verified": ngo.is_verified,
+        "stats": {
+            "total_cases":    total_cases,
+            "resolved_cases": resolved_cases,
+            "pets_listed":    pets_listed,
+            "pets_adopted":   pets_adopted,
+        },
+        "average_rating":      feedback_data["average_rating"],
+        "total_reviews":       feedback_data["total_reviews"],
+        "rating_distribution": feedback_data["rating_distribution"],
+        "recent_reviews": [
+            {
+                "id": r.id,
+                "rating": r.rating,
+                "comment": r.comment,
+                "category": r.category,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "ngo_response": r.ngo_response,
+            }
+            for r in feedback_data["reviews"][-5:]
+        ],
+        "available_pets": [
+            {
+                "id": p.id,
+                "name": p.name,
+                "species": p.species,
+                "breed": p.breed,
+                "image_url": p.image_url,
+                "age": p.age,
+                "gender": p.gender,
+            }
+            for p in recent_pets
+        ],
+    }
+
 
 # --- ADMIN ROUTES ---
 
@@ -306,6 +711,24 @@ def get_all_pets(db: Session = Depends(get_db)):
     available_pets = db.query(models.Pet).filter(models.Pet.status == "Available").all()
     return available_pets
 
+from app.algorithms import calculate_pet_match, calculate_severity_score, rank_ngos_for_case, cluster_case_hotspots
+
+@app.post("/pets/match", response_model=List[schemas.PetMatchResponse])
+def get_pet_matches(profile: schemas.MatchProfile, db: Session = Depends(get_db)):
+    """Endpoint for returning pets ranked by lifestyle match."""
+    pets = db.query(models.Pet).filter(models.Pet.status == "Available").all()
+    
+    results = []
+    for p in pets:
+        score = calculate_pet_match(p, profile.dict())
+        results.append({
+            "pet": p,
+            "match_percentage": score
+        })
+        
+    results.sort(key=lambda x: x["match_percentage"], reverse=True)
+    return results
+
 @app.post("/adoption-requests", response_model=schemas.AdoptionRequest)
 def submit_adoption_request(request: schemas.AdoptionRequestCreate, db: Session = Depends(get_db)):
     """Endpoint for users to submit an adoption request."""
@@ -323,14 +746,28 @@ async def create_pet_for_adoption(
     size: str = Form(...),
     location: str = Form(...),
     is_vaccinated: bool = Form(...),
-    image: UploadFile = File(...)
+    image: UploadFile = File(...),
+    video: UploadFile = File(None)  # Optional video upload
 ):
+    # --- Save image ---
     file_id = uuid.uuid4()
     filename = f"pet_{file_id}_{os.path.basename(image.filename)}"
     file_path = os.path.join(UPLOAD_DIR, filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
     image_url = f"uploads/{filename}"
+
+    # --- Save video (optional) ---
+    video_url = None
+    if video and video.filename:
+        video_dir = os.path.join(UPLOAD_DIR, "videos")
+        os.makedirs(video_dir, exist_ok=True)
+        video_id = uuid.uuid4()
+        video_filename = f"pet_video_{video_id}_{os.path.basename(video.filename)}"
+        video_path = os.path.join(video_dir, video_filename)
+        with open(video_path, "wb") as vbuf:
+            shutil.copyfileobj(video.file, vbuf)
+        video_url = f"uploads/videos/{video_filename}"
 
     pet_data = schemas.PetCreate(
         name=name,
@@ -343,7 +780,7 @@ async def create_pet_for_adoption(
         is_vaccinated=is_vaccinated
     )
 
-    return crud.create_pet(db=db, pet=pet_data, image_url=image_url, ngo_id=current_ngo.id)
+    return crud.create_pet(db=db, pet=pet_data, image_url=image_url, video_url=video_url, ngo_id=current_ngo.id)
 
 @app.get("/ngo/me/adoption-requests", response_model=List[schemas.AdoptionRequest])
 def get_ngo_adoption_requests(db: Session = Depends(get_db), current_ngo: schemas.NGO = Depends(get_current_ngo)):
@@ -411,6 +848,25 @@ def submit_feedback(
     return crud.create_feedback(db=db, feedback=feedback, user_id=current_user.id)
 
 
+@app.put("/feedback/{feedback_id}/respond", response_model=schemas.Feedback)
+def respond_to_feedback(
+    feedback_id: int,
+    body: schemas.NGOFeedbackRespond,
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    """NGO-authenticated endpoint to reply to a specific review."""
+    result = crud.respond_to_feedback(
+        db=db,
+        feedback_id=feedback_id,
+        ngo_id=current_ngo.id,
+        response=body.response
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Feedback not found or not authorized.")
+    return result
+
+
 @app.get("/feedback/summary/{ngo_id}", response_model=schemas.FeedbackSummary)
 def get_ngo_feedback_summary(ngo_id: int, db: Session = Depends(get_db)):
     return crud.get_feedback_for_ngo(db=db, ngo_id=ngo_id)
@@ -424,9 +880,232 @@ def get_all_platform_feedback(
     return crud.get_all_feedback(db=db)
 
 
-# -----------------------------------------
-# DONATION ENDPOINTS (Option 2 - No Route)
-# -----------------------------------------
+# --- USER PET LISTING ROUTES ---
+
+@app.post("/users/pets/list", response_model=schemas.UserPetListing)
+async def create_user_pet_listing(
+    name: str = Form(...),
+    species: str = Form(...),
+    age: str = Form(...),
+    location: str = Form(...),
+    description: str = Form(None),
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """User-authenticated endpoint to list a pet for adoption."""
+    file_id = uuid.uuid4()
+    filename = f"listing_{file_id}_{os.path.basename(image.filename)}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+    image_url = f"uploads/{filename}"
+
+    listing_data = schemas.UserPetListingCreate(
+        name=name, species=species, age=age,
+        location=location, description=description
+    )
+    return crud.create_user_pet_listing(
+        db=db, listing=listing_data, user_id=current_user.id, image_url=image_url
+    )
+
+
+@app.get("/users/pets", response_model=List[schemas.UserPetListing])
+def get_my_pet_listings(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Returns the current user's own pet listings."""
+    return crud.get_user_pet_listings(db=db, user_id=current_user.id)
+
+
+@app.get("/ngo/pets/listings", response_model=List[schemas.UserPetListing])
+def get_pending_pet_listings(
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    """NGO-authenticated endpoint to view all pending user pet listings."""
+    return crud.get_all_pending_pet_listings(db=db)
+
+
+@app.put("/ngo/pets/listings/{listing_id}/approve", response_model=schemas.UserPetListing)
+def approve_pet_listing(
+    listing_id: int,
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    result = crud.update_pet_listing_status(db=db, listing_id=listing_id, new_status="Approved")
+    if not result:
+        raise HTTPException(status_code=404, detail="Listing not found.")
+    return result
+
+
+@app.put("/ngo/pets/listings/{listing_id}/reject", response_model=schemas.UserPetListing)
+def reject_pet_listing(
+    listing_id: int,
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    result = crud.update_pet_listing_status(db=db, listing_id=listing_id, new_status="Rejected")
+    if not result:
+        raise HTTPException(status_code=404, detail="Listing not found.")
+    return result
+
+
+# --- DONOR ANALYTICS ROUTES ---
+
+@app.get("/donor/dashboard/donations/monthwise", response_model=List[schemas.MonthwiseDonation])
+def get_monthwise_donations(db: Session = Depends(get_db)):
+    """Public: Month-wise total donations for donor transparency dashboard."""
+    return crud.get_donations_monthwise(db=db)
+
+@app.get("/donor/dashboard/donations/yearwise", response_model=List[schemas.YearwiseDonation])
+def get_yearwise_donations(db: Session = Depends(get_db)):
+    """Public: Year-wise total donations for donor transparency dashboard."""
+    return crud.get_donations_yearwise(db=db)
+
+@app.get("/donor/dashboard/cases-supported", response_model=schemas.CaseStats)
+def get_cases_supported(db: Session = Depends(get_db)):
+    """Public: Case statistics for donor dashboard."""
+    return crud.get_case_stats(db=db)
+
+@app.get("/donor/dashboard/adoptions", response_model=schemas.AdoptionStats)
+def get_adoption_stats(db: Session = Depends(get_db)):
+    """Public: Adoption statistics for donor dashboard."""
+    return crud.get_adoption_stats(db=db)
+
+
+# ───── PLATFORM SUMMARY (Public) ─────────────────────
+@app.get("/stats/summary")
+def get_platform_summary(db: Session = Depends(get_db)):
+    """Public: Single lightweight endpoint with platform-wide KPIs for dashboard and landing page."""
+    case_stats    = crud.get_case_stats(db=db)
+    adopt_stats   = crud.get_adoption_stats(db=db)
+    return {
+        "total_cases":      case_stats["total_cases"],
+        "resolved_cases":   case_stats["resolved_cases"],
+        "active_cases":     case_stats["active_cases"],
+        "total_adoptions":  adopt_stats["total_adoptions"],
+        "available_pets":   adopt_stats["available_pets"],
+        "ngo_count":        adopt_stats["ngo_count"],
+    }
+
+
+# ───── DONOR VERIFICATION ─────────────────────────────
+
+@app.post("/donor/verify/email/request")
+def donor_email_verify_request(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """User-auth: generates email OTP, returns code (dev mode — shown to user)."""
+    code = crud.request_email_verification(db=db, user_id=current_user.id)
+    return {"message": "Verification code generated.", "code": code,
+            "note": "In production, this code would be emailed. Use it to confirm."}
+
+@app.post("/donor/verify/email/confirm")
+def donor_email_verify_confirm(
+    payload: schemas.DonorCodeConfirm,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    ok = crud.confirm_email_verification(db=db, user_id=current_user.id, code=payload.code)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Invalid or expired code.")
+    return {"message": "Email verified successfully.", "email_verified": True}
+
+@app.post("/donor/verify/phone/request")
+def donor_phone_verify_request(
+    payload: schemas.DonorVerifyRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not payload.phone:
+        raise HTTPException(status_code=400, detail="Phone number required.")
+    code = crud.request_phone_verification(db=db, user_id=current_user.id, phone=payload.phone)
+    return {"message": "Verification code generated.", "code": code,
+            "note": "In production, this code would be SMSed. Use it to confirm."}
+
+@app.post("/donor/verify/phone/confirm")
+def donor_phone_verify_confirm(
+    payload: schemas.DonorCodeConfirm,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    ok = crud.confirm_phone_verification(db=db, user_id=current_user.id, code=payload.code)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Invalid or expired code.")
+    return {"message": "Phone verified successfully.", "phone_verified": True}
+
+@app.get("/donor/status", response_model=schemas.DonorVerificationStatus)
+def donor_verification_status(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return crud.get_or_create_donor_verification(db=db, user_id=current_user.id)
+
+
+# ───── NGO ANALYTICS ──────────────────────────────────
+
+@app.get("/ngo/dashboard/cases/yearwise", response_model=List[schemas.TimeCount])
+def ngo_cases_yearwise(
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    return crud.get_ngo_cases_yearwise(db=db, ngo_id=current_ngo.id)
+
+@app.get("/ngo/dashboard/cases/monthwise", response_model=List[schemas.TimeCount])
+def ngo_cases_monthwise(
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    return crud.get_ngo_cases_monthwise(db=db, ngo_id=current_ngo.id)
+
+@app.get("/ngo/dashboard/species", response_model=List[schemas.SpeciesCount])
+def ngo_cases_species(
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    return crud.get_ngo_cases_by_species(db=db, ngo_id=current_ngo.id)
+
+@app.get("/ngo/dashboard/adoptions", response_model=List[schemas.TimeCount])
+def ngo_adoptions(
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    return crud.get_ngo_adoptions_monthwise(db=db, ngo_id=current_ngo.id)
+
+@app.get("/ngo/dashboard/donations", response_model=List[schemas.TimeAmount])
+def ngo_donations(
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    return crud.get_ngo_donations_monthwise(db=db, ngo_id=current_ngo.id)
+
+
+# ───── ADMIN ANALYTICS ────────────────────────────────
+
+@app.get("/admin/dashboard/cases", response_model=schemas.AdminCaseAnalytics)
+def admin_cases(
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user)
+):
+    return crud.get_admin_case_analytics(db=db)
+
+@app.get("/admin/dashboard/donations", response_model=schemas.AdminDonationAnalytics)
+def admin_donations(
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user)
+):
+    return crud.get_admin_donation_analytics(db=db)
+
+@app.get("/admin/dashboard/adoptions", response_model=schemas.AdminAdoptionAnalytics)
+def admin_adoptions(
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user)
+):
+    return crud.get_admin_adoption_analytics(db=db)
+
 
 @app.get("/donations/ngos", response_model=List[schemas.NGODonationStats])
 def get_ngos_for_donation(db: Session = Depends(get_db)):
@@ -434,6 +1113,24 @@ def get_ngos_for_donation(db: Session = Depends(get_db)):
     Returns verified NGOs with donation stats (last 30 days).
     """
     return crud.get_ngos_with_donation_stats(db)
+
+
+
+@app.put("/ngo/me/upi")
+def update_ngo_upi(
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_ngo: models.NGO = Depends(get_current_ngo)
+):
+    """NGO-authenticated: save / update their UPI VPA (e.g. testngo@upi)."""
+    upi_id = body.get("upi_id", "").strip()
+    if not upi_id:
+        raise HTTPException(status_code=400, detail="upi_id is required")
+    db_ngo = db.query(models.NGO).filter(models.NGO.id == current_ngo.id).first()
+    db_ngo.upi_id = upi_id
+    db.commit()
+    db.refresh(db_ngo)
+    return {"message": "UPI ID updated.", "upi_id": db_ngo.upi_id}
 
 
 # ---------- CREATE ORDER (Platform account only, NO transfers) ----------
@@ -559,3 +1256,282 @@ async def razorpay_webhook(
             db.commit()
 
     return {"status": "ok"}
+
+
+# ═══════════════════════════════════════════════════════════════
+#  FEATURE 1: SMART NGO DISPATCH
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/admin/cases/pending-unassigned")
+def get_pending_unassigned_cases(
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user)
+):
+    """Admin: returns all cases that are still Pending (not yet accepted by any NGO)."""
+    cases = db.query(models.Case).filter(models.Case.status == "Pending").order_by(models.Case.created_at.desc()).all()
+    severity_order = {"Critical": 0, "High": 1, "Moderate": 2, "Low": 3}
+    cases.sort(key=lambda c: severity_order.get(c.severity_label or "Low", 4))
+    return [
+        {
+            "id": c.id,
+            "description": c.description,
+            "latitude": c.latitude,
+            "longitude": c.longitude,
+            "photo_url": c.photo_url,
+            "status": c.status,
+            "severity_label": c.severity_label or "Low",
+            "severity_score": c.severity_score or 0,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in cases
+    ]
+
+
+@app.get("/admin/cases/{case_id}/dispatch")
+def dispatch_recommendations(
+    case_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user)
+):
+    """
+    Feature 1 – Smart Dispatch: returns ranked NGO recommendations for a specific case.
+    Uses Haversine distance + caseload to compute each NGO's suitability score.
+    """
+    db_case = crud.get_case_by_id(db, case_id=case_id)
+    if not db_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # Get all verified NGOs
+    ngos = db.query(models.NGO).filter(models.NGO.is_verified == True).all()
+
+    # Count active (Accepted) cases per NGO
+    active_counts = {}
+    for ngo in ngos:
+        active_counts[ngo.id] = db.query(models.Case).filter(
+            models.Case.accepted_by_ngo_id == ngo.id,
+            models.Case.status == "Accepted"
+        ).count()
+
+    ranked = rank_ngos_for_case(
+        case_lat=db_case.latitude,
+        case_lon=db_case.longitude,
+        ngos=ngos,
+        active_case_counts=active_counts
+    )
+    return {"case_id": case_id, "recommendations": ranked[:5]}  # top 5
+
+
+@app.put("/admin/cases/{case_id}/assign/{ngo_id}")
+def admin_assign_case_to_ngo(
+    case_id: int,
+    ngo_id: int,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user)
+):
+    """Admin force-assigns a specific NGO to a pending case."""
+    db_case = crud.get_case_by_id(db, case_id=case_id)
+    if not db_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    db_ngo = crud.get_ngo_by_id(db, ngo_id=ngo_id)
+    if not db_ngo:
+        raise HTTPException(status_code=404, detail="NGO not found")
+
+    db_case.status = "Accepted"
+    db_case.accepted_by_ngo_id = ngo_id
+    db.commit()
+    db.refresh(db_case)
+    return {"message": f"Case {case_id} assigned to NGO '{db_ngo.name}' successfully.", "case_id": case_id, "ngo_id": ngo_id}
+
+
+# ═══════════════════════════════════════════════════════════════
+#  FEATURE 4: ZONE RED HOTSPOT MAP
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/admin/hotspots")
+def get_hotspot_clusters(
+    k: int = 5,
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user)
+):
+    """
+    Feature 4 – Zone Red: Runs K-Means on all case GPS coordinates and returns
+    danger zone clusters for the admin hotspot map.
+    """
+    all_cases = db.query(models.Case).filter(
+        models.Case.latitude != None,
+        models.Case.longitude != None
+    ).all()
+
+    case_points = [
+        {"id": c.id, "lat": c.latitude, "lon": c.longitude, "severity_label": c.severity_label or "Low"}
+        for c in all_cases
+        if c.latitude is not None and c.longitude is not None
+    ]
+
+    clusters = cluster_case_hotspots(case_points, k=k)
+
+    # Also return individual case markers for the map
+    markers = [
+        {
+            "id": c.id,
+            "lat": c.latitude,
+            "lon": c.longitude,
+            "severity_label": c.severity_label or "Low",
+            "description": (c.description or "")[:60] + ("..." if len(c.description or "") > 60 else ""),
+            "status": c.status,
+        }
+        for c in all_cases
+    ]
+
+    return {
+        "total_cases_mapped": len(case_points),
+        "clusters": clusters,
+        "markers": markers,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
+#  FOOD MARKETPLACE
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/food/products")
+def list_food_products(category: str = None, db: Session = Depends(get_db)):
+    """Public: List all available food products, optionally filtered by category."""
+    products = crud.get_all_food_products(db=db)
+    if category:
+        products = [p for p in products if p.category.lower() == category.lower()]
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "price": p.price,
+            "image_url": p.image_url,
+            "category": p.category,
+            "seller_name": p.seller_name,
+            "stock": p.stock,
+            "is_available": p.is_available,
+        }
+        for p in products
+    ]
+
+
+@app.post("/food/products")
+def add_food_product(
+    name: str = Body(...),
+    description: str = Body(""),
+    price: float = Body(...),
+    image_url: str = Body(""),
+    category: str = Body("Dry Food"),
+    seller_name: str = Body("StrayCare Shop"),
+    stock: int = Body(100),
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    """Admin-only: Add a new food product to the catalogue."""
+    return crud.create_food_product(
+        db=db, name=name, description=description, price=price,
+        image_url=image_url, category=category, seller_name=seller_name, stock=stock,
+    )
+
+
+@app.post("/food/order")
+def place_food_order(
+    product_id: int = Body(...),
+    quantity: int = Body(...),
+    buyer_name: str = Body(...),
+    buyer_email: str = Body(...),
+    buyer_phone: str = Body(""),
+    delivery_address: str = Body(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Authenticated citizen: Place a food order."""
+    product = db.query(models.FoodProduct).filter(models.FoodProduct.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if not product.is_available or product.stock < quantity:
+        raise HTTPException(status_code=400, detail="Product not available or insufficient stock")
+
+    order = crud.create_food_order(
+        db=db,
+        product_id=product_id,
+        quantity=quantity,
+        buyer_name=buyer_name,
+        buyer_email=buyer_email,
+        buyer_phone=buyer_phone,
+        delivery_address=delivery_address,
+        user_id=current_user.id,
+    )
+    # Reduce stock
+    product.stock = max(0, product.stock - quantity)
+    if product.stock == 0:
+        product.is_available = False
+    db.commit()
+
+    return {
+        "id": order.id,
+        "product_name": order.product_name,
+        "quantity": order.quantity,
+        "total_price": order.total_price,
+        "status": order.status,
+        "ordered_at": order.ordered_at.isoformat() if order.ordered_at else None,
+    }
+
+
+@app.get("/food/orders/me")
+def get_my_food_orders(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Citizen: Get their own food order history."""
+    orders = crud.get_orders_by_email(db=db, email=current_user.email)
+    return [
+        {
+            "id": o.id,
+            "product_name": o.product_name,
+            "quantity": o.quantity,
+            "total_price": o.total_price,
+            "status": o.status,
+            "delivery_address": o.delivery_address,
+            "ordered_at": o.ordered_at.isoformat() if o.ordered_at else None,
+        }
+        for o in orders
+    ]
+
+
+@app.get("/admin/food/orders")
+def admin_get_food_orders(db: Session = Depends(get_db), admin_user: models.User = Depends(get_current_admin_user)):
+    """Admin: Get all food orders."""
+    orders = crud.get_all_food_orders(db=db)
+    return [
+        {
+            "id": o.id,
+            "product_name": o.product_name,
+            "quantity": o.quantity,
+            "total_price": o.total_price,
+            "status": o.status,
+            "buyer_name": o.buyer_name,
+            "buyer_email": o.buyer_email,
+            "buyer_phone": o.buyer_phone,
+            "delivery_address": o.delivery_address,
+            "ordered_at": o.ordered_at.isoformat() if o.ordered_at else None,
+        }
+        for o in orders
+    ]
+
+
+@app.put("/admin/food/orders/{order_id}/status")
+def admin_update_order_status(
+    order_id: int,
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+    admin_user: models.User = Depends(get_current_admin_user),
+):
+    """Admin: Update a food order status (Pending → Confirmed → Delivered)."""
+    new_status = body.get("status")
+    if new_status not in ["Pending", "Confirmed", "Delivered", "Cancelled"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    order = crud.update_food_order_status(db=db, order_id=order_id, new_status=new_status)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"id": order.id, "status": order.status}
+
+

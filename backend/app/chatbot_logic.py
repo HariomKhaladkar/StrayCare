@@ -1,55 +1,100 @@
 # app/chatbot_logic.py
 
-def get_chatbot_response(query: str):
+import os
+import requests
+
+# Groq API endpoint (OpenAI-compatible)
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama-3.3-70b-versatile"  # Fast, capable, generous free tier
+
+# System prompt constraining the AI to StrayCare's domain
+SYSTEM_PROMPT = """You are the StrayCare AI Assistant — a compassionate, knowledgeable helper for people who care about stray and injured animals in India.
+
+Your primary areas of expertise:
+1. **Animal First Aid** – Bleeding wounds, fractures, poisoning, choking, burns, eye injuries, shock, dehydration, heat stroke, and other emergencies for dogs, cats, and other stray animals.
+2. **Safe Rescue Guidance** – How to safely approach, contain, and transport an injured or frightened stray animal without harming it or yourself.
+3. **StrayCare App Help** – How to report a stray case, track its status, submit an adoption request, donate to NGOs, find nearby verified NGOs, use the AI Pet Matchmaker, and other app features.
+4. **General Animal Welfare** – Vaccination schedules, nutrition basics, post-surgery care, and spay/neuter advice.
+
+Tone & style:
+- Warm, calm, and reassuring — users are often panicking about an injured animal.
+- Provide clear, step-by-step instructions when giving first aid advice.
+- Always recommend contacting a vet for serious emergencies; never substitute professional care.
+- Use **bold** for key action steps and keep responses concise but complete.
+- If a question is completely unrelated to animals, animal welfare, or the StrayCare app, politely decline and redirect.
+
+Language: Respond in the same language the user writes in (English or Hindi are most common).
+"""
+
+
+def get_chatbot_response(query: str, history: list = []) -> str:
     """
-    This function contains the rules for the first-aid chatbot. It checks the
-    user's query for keywords and returns a pre-written response.
-    It does not call any external APIs.
+    Sends the user query to Groq's API (Llama 3.3 70B) with a StrayCare system prompt.
+    Supports multi-turn conversation via the `history` list.
+    Falls back gracefully if the API key is missing or the call fails.
     """
-    lower_query = query.lower()
+    api_key = os.getenv("GROQ_API_KEY")
 
-    # Rule: General Safety / How to Approach
-    if 'approach' in lower_query or 'how to help' in lower_query or 'scared' in lower_query:
-        return ("Safety is the #1 priority. Approach the animal slowly, speaking in a calm voice. "
-                "Avoid direct eye contact. If the animal growls, shows teeth, or seems aggressive, "
-                "do not approach. Keep a safe distance and report the case.")
+    if not api_key:
+        return (
+            "⚠️ The AI assistant is not configured yet. "
+            "Please ask the administrator to set `GROQ_API_KEY` in the backend `.env` file. "
+            "Get a free key at https://console.groq.com/keys — no credit card required. "
+            "For urgent animal emergencies, please contact a local vet directly."
+        )
 
-    # Rule: Bleeding or Wounds
-    elif 'bleeding' in lower_query or 'cut' in lower_query or 'wound' in lower_query:
-        return ("For bleeding, apply firm, gentle pressure on the wound with a clean cloth or sterile gauze. "
-                "Do not use tourniquets. If bleeding is severe or doesn't stop after 5 minutes, "
-                "the animal needs to see a vet immediately.")
+    try:
+        # Build the messages array: system prompt + history + current query
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    # Rule: Suspected Poisoning
-    elif 'poison' in lower_query or 'ate something' in lower_query or 'ingested' in lower_query:
-        return ("This is an emergency. Contact a vet or animal poison control center immediately. "
-                "Do NOT induce vomiting unless instructed by a professional. If you know what "
-                "the animal consumed, have that information ready for the vet.")
+        for msg in history:
+            role = msg.get("role", "user")
+            text = msg.get("text", "")
+            if role in ("user", "model") and text:
+                # Groq uses "assistant" not "model"
+                messages.append({
+                    "role": "assistant" if role == "model" else "user",
+                    "content": text
+                })
 
-    # Rule: Limping or Broken Bone
-    elif 'broken' in lower_query or 'limp' in lower_query or 'leg' in lower_query:
-        return ("Do not try to set the bone or apply a splint yourself. Keep the animal as still "
-                "and calm as possible to prevent further injury. Transport them to a vet immediately, "
-                "using a board or blanket as a stretcher if necessary.")
-    
-    # Rule: Choking
-    elif 'choking' in lower_query or "can't breathe" in lower_query:
-        return ("If the animal is choking, first check their mouth for any foreign objects and carefully "
-                "try to remove them if it is safe to do so. If you can't, you may need to perform a modified "
-                "Heimlich maneuver. This is a critical emergency that requires immediate vet attention.")
+        messages.append({"role": "user", "content": query})
 
-    # Rule: Vomiting
-    elif 'vomiting' in lower_query or 'vomit' in lower_query:
-        return ("Withhold food for a few hours, but ensure fresh water is available. If vomiting is continuous, "
-                "contains blood, or is accompanied by other symptoms like lethargy, it is a sign "
-                "of a serious issue. Please contact a vet.")
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": GROQ_MODEL,
+            "messages": messages,
+            "max_tokens": 1024,
+            "temperature": 0.7,
+        }
 
-    # Rule: Thank you
-    elif 'thank' in lower_query:
-        return "You're very welcome. Please prioritize safety and professional help."
+        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=30)
 
-    # Fallback response if no rules match
-    else:
-        return ("I'm sorry, I'm not sure how to answer that. I can provide basic advice on topics like "
-                "bleeding, suspected poisoning, broken bones, or how to safely approach an animal. "
-                "For any emergency, please contact a vet.")
+        if response.status_code == 429:
+            return (
+                "⚠️ The AI assistant is temporarily rate-limited. "
+                "Please wait a moment and try again."
+            )
+        if response.status_code == 401:
+            return (
+                "⚠️ Invalid API key. Please check the `GROQ_API_KEY` in the backend `.env` file."
+            )
+
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
+
+    except requests.exceptions.Timeout:
+        return (
+            "I'm sorry, the AI response timed out. Please try again. "
+            "For animal emergencies, contact a local vet immediately."
+        )
+    except Exception as e:
+        print(f"Groq API error: {type(e).__name__}: {e}")
+        return (
+            "I'm sorry, I'm having trouble connecting to the AI service right now. "
+            "For animal emergencies, please contact a local vet immediately. "
+            "You can also use the StrayCare app to report a case and find nearby NGOs."
+        )

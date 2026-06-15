@@ -167,13 +167,14 @@ def create_donation(db: Session, donation: schemas.DonationCreate):
     db.refresh(db_donation)
     return db_donation
 
-def create_pet(db: Session, pet: schemas.PetCreate, image_url: str, ngo_id: int):
+def create_pet(db: Session, pet: schemas.PetCreate, image_url: str, ngo_id: int, video_url: str | None = None):
     """
     Creates a new pet entry in the database.
     """
     db_pet = models.Pet(
         **pet.dict(),
         image_url=image_url,
+        video_url=video_url,
         ngo_id=ngo_id,
         status="Available"
     )
@@ -195,19 +196,44 @@ def create_feedback(db: Session, feedback: schemas.FeedbackCreate, user_id: int)
     db.refresh(db_feedback)
     return db_feedback
 
+def respond_to_feedback(db: Session, feedback_id: int, ngo_id: int, response: str):
+    """
+    Allows an NGO to add a response to a feedback entry they received.
+    """
+    db_feedback = db.query(models.Feedback).filter(
+        models.Feedback.id == feedback_id,
+        models.Feedback.ngo_id == ngo_id
+    ).first()
+    if not db_feedback:
+        return None
+    db_feedback.ngo_response = response
+    db.commit()
+    db.refresh(db_feedback)
+    return db_feedback
+
 def get_feedback_for_ngo(db: Session, ngo_id: int):
     """
-    Retrieves all feedback for a specific NGO and calculates the average rating.
+    Retrieves all feedback for a specific NGO, calculates average rating and distribution.
     """
     reviews = db.query(models.Feedback).filter(models.Feedback.ngo_id == ngo_id).all()
     
     # Calculate average rating using SQLAlchemy's func.avg
     average_rating = db.query(func.avg(models.Feedback.rating)).filter(models.Feedback.ngo_id == ngo_id).scalar()
     
+    # Calculate distribution: count per star (1-5)
+    distribution = []
+    for star in range(1, 6):
+        count = db.query(models.Feedback).filter(
+            models.Feedback.ngo_id == ngo_id,
+            models.Feedback.rating == star
+        ).count()
+        distribution.append({"star": star, "count": count})
+    
     return {
         "reviews": reviews,
         "total_reviews": len(reviews),
-        "average_rating": round(average_rating, 1) if average_rating else None
+        "average_rating": round(average_rating, 1) if average_rating else None,
+        "rating_distribution": distribution,
     }
 
 def get_all_feedback(db: Session):
@@ -215,6 +241,7 @@ def get_all_feedback(db: Session):
     Retrieves all feedback entries for the admin dashboard.
     """
     return db.query(models.Feedback).all()
+
 
 def get_ngos_with_donation_stats(db: Session):
     """
@@ -242,7 +269,8 @@ def get_ngos_with_donation_stats(db: Session):
             name=ngo.name,
             email=ngo.email,
             verification_document_url=ngo.verification_document_url,
-            total_donations_last_30_days=total
+            total_donations_last_30_days=total,
+            upi_id=ngo.upi_id  # pass-through for direct UPI deep-link on frontend
         )
         results.append(ngo_data)
         
@@ -283,3 +311,441 @@ def notify_admins_on_donation(donation_id: int, db: Session):
         send_email(recipients, subject, body)
     except Exception as e:
         print("Failed to notify admins:", e)
+
+
+# --- User Pet Listing CRUD ---
+
+def create_user_pet_listing(db: Session, listing: schemas.UserPetListingCreate, user_id: int, image_url: str):
+    """Creates a new user-submitted pet listing."""
+    db_listing = models.UserPetListing(
+        **listing.dict(),
+        user_id=user_id,
+        image_url=image_url,
+        status="Pending"
+    )
+    db.add(db_listing)
+    db.commit()
+    db.refresh(db_listing)
+    return db_listing
+
+def get_user_pet_listings(db: Session, user_id: int):
+    """Gets all pet listings submitted by a specific user."""
+    return db.query(models.UserPetListing).filter(
+        models.UserPetListing.user_id == user_id
+    ).order_by(models.UserPetListing.created_at.desc()).all()
+
+def get_all_pending_pet_listings(db: Session):
+    """Gets all pending user-submitted pet listings for NGO review, enriched with user_name."""
+    listings = db.query(models.UserPetListing).filter(
+        models.UserPetListing.status == "Pending"
+    ).order_by(models.UserPetListing.created_at.desc()).all()
+
+    # Attach user_name dynamically by fetching each submitter's name
+    for listing in listings:
+        user = db.query(models.User).filter(models.User.id == listing.user_id).first()
+        listing.user_name = user.name if user else "Unknown"
+    return listings
+
+def update_pet_listing_status(db: Session, listing_id: int, new_status: str):
+    """Updates the status of a user pet listing (Approved/Rejected)."""
+    db_listing = db.query(models.UserPetListing).filter(
+        models.UserPetListing.id == listing_id
+    ).first()
+    if not db_listing:
+        return None
+    db_listing.status = new_status
+    db.commit()
+    db.refresh(db_listing)
+    return db_listing
+
+
+# --- Donor Analytics CRUD ---
+
+def get_donations_monthwise(db: Session):
+    """Returns total successful donations grouped by month for the last 12 months."""
+    from sqlalchemy import func, text
+    rows = (
+        db.query(
+            func.strftime("%Y-%m", models.Donation.timestamp).label("month_key"),
+            func.sum(models.Donation.amount).label("amount")
+        )
+        .filter(models.Donation.status == "Success")
+        .group_by(func.strftime("%Y-%m", models.Donation.timestamp))
+        .order_by(func.strftime("%Y-%m", models.Donation.timestamp).asc())
+        .limit(12)
+        .all()
+    )
+    result = []
+    for row in rows:
+        # Convert "2025-03" -> "Mar 2025"
+        try:
+            from datetime import datetime as dt
+            d = dt.strptime(row.month_key, "%Y-%m")
+            label = d.strftime("%b %Y")
+        except Exception:
+            label = row.month_key
+        result.append({"month": label, "amount": round(row.amount or 0, 2)})
+    return result
+
+def get_donations_yearwise(db: Session):
+    """Returns total successful donations grouped by year."""
+    from sqlalchemy import func
+    rows = (
+        db.query(
+            func.strftime("%Y", models.Donation.timestamp).label("year"),
+            func.sum(models.Donation.amount).label("amount")
+        )
+        .filter(models.Donation.status == "Success")
+        .group_by(func.strftime("%Y", models.Donation.timestamp))
+        .order_by(func.strftime("%Y", models.Donation.timestamp).asc())
+        .all()
+    )
+    return [{"year": row.year, "amount": round(row.amount or 0, 2)} for row in rows]
+
+def get_case_stats(db: Session):
+    """Returns case statistics for the donor transparency dashboard."""
+    total = db.query(models.Case).count()
+    resolved = db.query(models.Case).filter(models.Case.status == "Resolved").count()
+    active = db.query(models.Case).filter(models.Case.status.in_(["Pending", "Accepted"])).count()
+    return {"total_cases": total, "resolved_cases": resolved, "active_cases": active}
+
+def get_adoption_stats(db: Session):
+    """Returns adoption statistics for the donor transparency dashboard."""
+    total_adopted = db.query(models.Pet).filter(models.Pet.status == "Adopted").count()
+    available = db.query(models.Pet).filter(models.Pet.status == "Available").count()
+    ngo_count = db.query(models.NGO).filter(models.NGO.is_verified == True).count()
+    return {"total_adoptions": total_adopted, "available_pets": available, "ngo_count": ngo_count}
+
+
+# ════════════════════════════════════════════
+# DONOR VERIFICATION
+# ════════════════════════════════════════════
+
+def _make_code() -> str:
+    import random
+    return str(random.randint(100000, 999999))
+
+def _update_verification_status(record: models.DonorVerification):
+    from datetime import datetime
+    if record.email_verified and record.phone_verified:
+        record.verification_status = "Verified"
+        record.verified_at = datetime.utcnow()
+    elif record.email_verified or record.phone_verified:
+        record.verification_status = "Partial"
+    else:
+        record.verification_status = "Unverified"
+
+def get_or_create_donor_verification(db: Session, user_id: int) -> models.DonorVerification:
+    record = db.query(models.DonorVerification).filter(
+        models.DonorVerification.user_id == user_id
+    ).first()
+    if not record:
+        record = models.DonorVerification(user_id=user_id)
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+    return record
+
+def request_email_verification(db: Session, user_id: int) -> str:
+    """Generates an email OTP, stores it, returns it (dev mode — display to user)."""
+    record = get_or_create_donor_verification(db, user_id)
+    code = _make_code()
+    record.email_code = code
+    db.commit()
+    return code
+
+def confirm_email_verification(db: Session, user_id: int, code: str) -> bool:
+    record = get_or_create_donor_verification(db, user_id)
+    if record.email_code and record.email_code == code:
+        record.email_verified = True
+        record.email_code = None
+        _update_verification_status(record)
+        db.commit()
+        db.refresh(record)
+        return True
+    return False
+
+def request_phone_verification(db: Session, user_id: int, phone: str) -> str:
+    """Generates a phone OTP, stores it, returns it (dev mode)."""
+    record = get_or_create_donor_verification(db, user_id)
+    code = _make_code()
+    record.phone_code = code
+    record.phone_number = phone
+    db.commit()
+    return code
+
+def confirm_phone_verification(db: Session, user_id: int, code: str) -> bool:
+    record = get_or_create_donor_verification(db, user_id)
+    if record.phone_code and record.phone_code == code:
+        record.phone_verified = True
+        record.phone_code = None
+        _update_verification_status(record)
+        db.commit()
+        db.refresh(record)
+        return True
+    return False
+
+
+# ════════════════════════════════════════════
+# NGO ANALYTICS
+# ════════════════════════════════════════════
+
+def _fmt_month(key: str) -> str:
+    """Convert '2025-03' → 'Mar 2025'."""
+    try:
+        from datetime import datetime as dt
+        return dt.strptime(key, "%Y-%m").strftime("%b %Y")
+    except Exception:
+        return key
+
+def get_ngo_cases_yearwise(db: Session, ngo_id: int):
+    from sqlalchemy import func
+    rows = (db.query(
+            func.strftime("%Y", models.Case.created_at).label("yr"),
+            func.count(models.Case.id).label("cnt"))
+        .filter(models.Case.accepted_by_ngo_id == ngo_id)
+        .group_by(func.strftime("%Y", models.Case.created_at))
+        .order_by(func.strftime("%Y", models.Case.created_at).asc())
+        .all())
+    return [{"label": r.yr, "count": r.cnt} for r in rows]
+
+def get_ngo_cases_monthwise(db: Session, ngo_id: int):
+    from sqlalchemy import func
+    rows = (db.query(
+            func.strftime("%Y-%m", models.Case.created_at).label("mo"),
+            func.count(models.Case.id).label("cnt"))
+        .filter(models.Case.accepted_by_ngo_id == ngo_id)
+        .group_by(func.strftime("%Y-%m", models.Case.created_at))
+        .order_by(func.strftime("%Y-%m", models.Case.created_at).asc())
+        .limit(12).all())
+    return [{"label": _fmt_month(r.mo), "count": r.cnt} for r in rows]
+
+def get_ngo_cases_by_species(db: Session, ngo_id: int):
+    """Cases grouped by species via adoptable Pet records owned by NGO."""
+    from sqlalchemy import func
+    rows = (db.query(
+            models.Pet.species.label("species"),
+            func.count(models.Pet.id).label("cnt"))
+        .filter(models.Pet.ngo_id == ngo_id)
+        .group_by(models.Pet.species)
+        .order_by(func.count(models.Pet.id).desc())
+        .all())
+    return [{"species": r.species or "Unknown", "count": r.cnt} for r in rows]
+
+def get_ngo_adoptions_monthwise(db: Session, ngo_id: int):
+    from sqlalchemy import func
+    rows = (db.query(
+            func.strftime("%Y-%m", models.AdoptionRequest.request_date).label("mo"),
+            func.count(models.AdoptionRequest.id).label("cnt"))
+        .filter(
+            models.AdoptionRequest.ngo_id == ngo_id,
+            models.AdoptionRequest.status == "Approved")
+        .group_by(func.strftime("%Y-%m", models.AdoptionRequest.request_date))
+        .order_by(func.strftime("%Y-%m", models.AdoptionRequest.request_date).asc())
+        .limit(12).all())
+    return [{"label": _fmt_month(r.mo), "count": r.cnt} for r in rows]
+
+def get_ngo_donations_monthwise(db: Session, ngo_id: int):
+    from sqlalchemy import func
+    rows = (db.query(
+            func.strftime("%Y-%m", models.Donation.timestamp).label("mo"),
+            func.sum(models.Donation.amount).label("amount"))
+        .filter(
+            models.Donation.ngo_id == ngo_id,
+            models.Donation.status == "Success")
+        .group_by(func.strftime("%Y-%m", models.Donation.timestamp))
+        .order_by(func.strftime("%Y-%m", models.Donation.timestamp).asc())
+        .limit(12).all())
+    return [{"label": _fmt_month(r.mo), "amount": round(r.amount or 0, 2)} for r in rows]
+
+
+# ════════════════════════════════════════════
+# ADMIN ANALYTICS
+# ════════════════════════════════════════════
+
+def get_admin_case_analytics(db: Session):
+    from sqlalchemy import func
+    total    = db.query(models.Case).count()
+    resolved = db.query(models.Case).filter(models.Case.status == "Resolved").count()
+    pending  = db.query(models.Case).filter(models.Case.status == "Pending").count()
+    accepted = db.query(models.Case).filter(models.Case.status == "Accepted").count()
+    rows = (db.query(
+            func.strftime("%Y-%m", models.Case.created_at).label("mo"),
+            func.count(models.Case.id).label("cnt"))
+        .group_by(func.strftime("%Y-%m", models.Case.created_at))
+        .order_by(func.strftime("%Y-%m", models.Case.created_at).asc())
+        .limit(12).all())
+    monthwise = [{"label": _fmt_month(r.mo), "count": r.cnt} for r in rows]
+    return {"total": total, "resolved": resolved, "pending": pending,
+            "accepted": accepted, "monthwise": monthwise}
+
+def get_admin_donation_analytics(db: Session):
+    from sqlalchemy import func
+    total_amount = db.query(func.sum(models.Donation.amount)).filter(
+        models.Donation.status == "Success").scalar() or 0.0
+    rows = (db.query(
+            func.strftime("%Y-%m", models.Donation.timestamp).label("mo"),
+            func.sum(models.Donation.amount).label("amount"))
+        .filter(models.Donation.status == "Success")
+        .group_by(func.strftime("%Y-%m", models.Donation.timestamp))
+        .order_by(func.strftime("%Y-%m", models.Donation.timestamp).asc())
+        .limit(12).all())
+    monthwise = [{"label": _fmt_month(r.mo), "amount": round(r.amount or 0, 2)} for r in rows]
+    return {"total_amount": round(total_amount, 2), "monthwise": monthwise}
+
+def get_admin_adoption_analytics(db: Session):
+    from sqlalchemy import func
+    total_adopted = db.query(models.Pet).filter(models.Pet.status == "Adopted").count()
+    available     = db.query(models.Pet).filter(models.Pet.status == "Available").count()
+    rows = (db.query(
+            func.strftime("%Y-%m", models.AdoptionRequest.request_date).label("mo"),
+            func.count(models.AdoptionRequest.id).label("cnt"))
+        .filter(models.AdoptionRequest.status == "Approved")
+        .group_by(func.strftime("%Y-%m", models.AdoptionRequest.request_date))
+        .order_by(func.strftime("%Y-%m", models.AdoptionRequest.request_date).asc())
+        .limit(12).all())
+    monthwise = [{"label": _fmt_month(r.mo), "count": r.cnt} for r in rows]
+    return {"total_adopted": total_adopted, "available": available, "monthwise": monthwise}
+
+
+# ════════════════════════════════════════════
+# NOTIFICATIONS
+# ════════════════════════════════════════════
+
+def create_notification(db: Session, message: str, notif_type: str = "info",
+                        user_id: int = None, ngo_id: int = None, case_id: int = None):
+    """Creates a single notification record for either a user or an NGO."""
+    notif = models.Notification(
+        message=message,
+        type=notif_type,
+        user_id=user_id,
+        ngo_id=ngo_id,
+        case_id=case_id,
+    )
+    db.add(notif)
+    db.commit()
+    db.refresh(notif)
+    return notif
+
+
+def get_user_notifications(db: Session, user_id: int, limit: int = 20):
+    """Returns the latest notifications for a citizen user."""
+    return (
+        db.query(models.Notification)
+        .filter(models.Notification.user_id == user_id)
+        .order_by(models.Notification.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def get_ngo_notifications(db: Session, ngo_id: int, limit: int = 20):
+    """Returns the latest notifications for an NGO."""
+    return (
+        db.query(models.Notification)
+        .filter(models.Notification.ngo_id == ngo_id)
+        .order_by(models.Notification.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def mark_user_notifications_read(db: Session, user_id: int):
+    """Marks all unread notifications for a user as read."""
+    db.query(models.Notification).filter(
+        models.Notification.user_id == user_id,
+        models.Notification.is_read == False
+    ).update({"is_read": True})
+    db.commit()
+
+
+def mark_ngo_notifications_read(db: Session, ngo_id: int):
+    """Marks all unread notifications for an NGO as read."""
+    db.query(models.Notification).filter(
+        models.Notification.ngo_id == ngo_id,
+        models.Notification.is_read == False
+    ).update({"is_read": True})
+    db.commit()
+
+
+# ════════════════════════════════════════════
+# FOOD MARKETPLACE
+# ════════════════════════════════════════════
+
+def get_all_food_products(db: Session):
+    """Returns all available food products."""
+    return db.query(models.FoodProduct).filter(models.FoodProduct.is_available == True).order_by(models.FoodProduct.category).all()
+
+def create_food_product(db: Session, name: str, description: str, price: float,
+                        image_url: str, category: str, seller_name: str, stock: int):
+    product = models.FoodProduct(
+        name=name, description=description, price=price, image_url=image_url,
+        category=category, seller_name=seller_name, stock=stock,
+    )
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+    return product
+
+def create_food_order(db: Session, product_id: int, quantity: int,
+                      buyer_name: str, buyer_email: str, buyer_phone: str,
+                      delivery_address: str, user_id: int = None):
+    product = db.query(models.FoodProduct).filter(models.FoodProduct.id == product_id).first()
+    if not product:
+        return None
+    order = models.FoodOrder(
+        product_id=product_id,
+        product_name=product.name,
+        quantity=quantity,
+        total_price=round(product.price * quantity, 2),
+        buyer_name=buyer_name,
+        buyer_email=buyer_email,
+        buyer_phone=buyer_phone,
+        delivery_address=delivery_address,
+        user_id=user_id,
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return order
+
+def get_orders_by_email(db: Session, email: str):
+    """Returns all orders placed by a buyer email."""
+    return (
+        db.query(models.FoodOrder)
+        .filter(models.FoodOrder.buyer_email == email)
+        .order_by(models.FoodOrder.ordered_at.desc())
+        .all()
+    )
+
+def get_all_food_orders(db: Session):
+    """Admin: returns all food orders."""
+    return db.query(models.FoodOrder).order_by(models.FoodOrder.ordered_at.desc()).all()
+
+def update_food_order_status(db: Session, order_id: int, new_status: str):
+    order = db.query(models.FoodOrder).filter(models.FoodOrder.id == order_id).first()
+    if not order:
+        return None
+    order.status = new_status
+    db.commit()
+    db.refresh(order)
+    return order
+
+def seed_food_products(db: Session):
+    """Seeds 8 sample food products if none exist."""
+    if db.query(models.FoodProduct).count() > 0:
+        return
+    products = [
+        dict(name="Royal Canin Adult Dog Food", description="Complete nutrition for adult dogs. Supports digestion and skin health.", price=699.0, image_url="https://placehold.co/400x400/F8B400/493829?text=Dog+Food", category="Dry Food", seller_name="PetNutrition India", stock=50),
+        dict(name="Whiskas Tuna Wet Cat Food", description="Delicious tuna flavor cats love. High moisture content, great for hydration.", price=85.0, image_url="https://placehold.co/400x400/A0AEC0/FFFFFF?text=Cat+Food", category="Wet Food", seller_name="Mars Petcare", stock=200),
+        dict(name="Pedigree Chicken & Vegetables", description="Balanced dry food for stray dogs with chicken, vegetables, and minerals.", price=450.0, image_url="https://placehold.co/400x400/964B00/FFFFFF?text=Pedigree", category="Dry Food", seller_name="Pedigree India", stock=80),
+        dict(name="Me-O Tuna & Shrimp Cat Treats", description="Irresistible treats for cats. Perfect as a reward or topping on regular meals.", price=120.0, image_url="https://placehold.co/400x400/E5E7EB/4A5568?text=Cat+Treats", category="Treats", seller_name="Me-O", stock=150),
+        dict(name="Drools Puppy Starter", description="Specially formulated dry food for stray puppies aged 2–12 months.", price=320.0, image_url="https://placehold.co/400x400/2D3748/FFFFFF?text=Puppy+Food", category="Dry Food", seller_name="Drools India", stock=60),
+        dict(name="Himalaya Erina-EP Dog Supplement", description="Anti-tick and flea supplement with neem and aloe for stray dog skin care.", price=195.0, image_url="https://placehold.co/400x400/6366f1/FFFFFF?text=Supplement", category="Supplements", seller_name="Himalaya", stock=100),
+        dict(name="Fresho Dog Biscuits", description="Crunchy biscuits with milk and vegetables. Great as treats during training.", price=75.0, image_url="https://placehold.co/400x400/ec4899/FFFFFF?text=Biscuits", category="Treats", seller_name="FreshoNaturals", stock=300),
+        dict(name="Royal Canin Kitten Food", description="Complete nutrition for kittens under 12 months. Supports immune system.", price=550.0, image_url="https://placehold.co/400x400/14b8a6/FFFFFF?text=Kitten+Food", category="Dry Food", seller_name="Royal Canin", stock=40),
+    ]
+    for p in products:
+        db.add(models.FoodProduct(**p))
+    db.commit()
+    print("[OK] Food product catalog seeded.")

@@ -23,6 +23,7 @@ class NGO(Base):
     verification_document_url = Column(String, nullable=True)
     donations = relationship("Donation", back_populates="ngo")
     razorpay_account_id = Column(String, nullable=True)
+    upi_id = Column(String, nullable=True)  # e.g. "testngo@upi" for direct UPI fallback
     
 class Case(Base):
     __tablename__ = "cases"
@@ -40,6 +41,10 @@ class Case(Base):
     is_adoptable = Column(Boolean, default=False) # Add a default value
     adoption_story = Column(String, nullable=True)
     temperament = Column(String, nullable=True)
+
+    # Feature 3: Severity Triaging
+    severity_score = Column(Integer, default=0)
+    severity_label = Column(String, default="Low")  # Critical, High, Moderate, Low
 
     owner = relationship("User", back_populates="cases")
     updates = relationship("CaseUpdate", back_populates="case", cascade="all, delete-orphan")
@@ -67,9 +72,11 @@ class Pet(Base):
     is_vaccinated = Column(Boolean, default=False)
     location = Column(String)
     image_url = Column(String)
+    video_url = Column(String, nullable=True)  # Optional video for adoption listing
     status = Column(String, default="Available") # e.g., Available, Adopted
     # Link to the NGO that is handling the adoption
     ngo_id = Column(Integer, ForeignKey("ngos.id"))
+
 
 class AdoptionRequest(Base):
     __tablename__ = "adoption_requests"
@@ -124,6 +131,8 @@ class Feedback(Base):
     id = Column(Integer, primary_key=True, index=True)
     rating = Column(Integer, nullable=False) # 1 to 5 stars
     comment = Column(Text, nullable=True)
+    category = Column(String, nullable=True)  # e.g., Response Time, Treatment Quality
+    ngo_response = Column(Text, nullable=True)  # NGO's reply to the review
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # --- Contextual Links ---
@@ -138,3 +147,85 @@ class Feedback(Base):
     user = relationship("User")
     ngo = relationship("NGO")
     case = relationship("Case")
+
+
+class UserPetListing(Base):
+    __tablename__ = "user_pet_listings"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    species = Column(String, nullable=False)
+    age = Column(String, nullable=False)
+    location = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    image_url = Column(String, nullable=False)
+    status = Column(String, default="Pending")  # Pending, Approved, Rejected
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user = relationship("User")
+
+
+class DonorVerification(Base):
+    __tablename__ = "donor_verifications"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+
+    email_verified = Column(Boolean, default=False)
+    phone_verified  = Column(Boolean, default=False)
+
+    email_code  = Column(String, nullable=True)   # in-app OTP
+    phone_code  = Column(String, nullable=True)
+
+    phone_number = Column(String, nullable=True)
+
+    # "Unverified" | "Partial" | "Verified"
+    verification_status = Column(String, default="Unverified")
+    verified_at = Column(DateTime, nullable=True)
+
+    user = relationship("User")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id         = Column(Integer, primary_key=True, index=True)
+    message    = Column(String, nullable=False)
+    type       = Column(String, default="info")    # "new_case" | "case_update" | "case_accepted" | "case_rejected"
+    is_read    = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Target: either a citizen user OR an NGO (one will be None)
+    user_id    = Column(Integer, ForeignKey("users.id"), nullable=True)
+    ngo_id     = Column(Integer, ForeignKey("ngos.id"),  nullable=True)
+    case_id    = Column(Integer, ForeignKey("cases.id"), nullable=True)
+
+
+class FoodProduct(Base):
+    __tablename__ = "food_products"
+    id           = Column(Integer, primary_key=True, index=True)
+    name         = Column(String, nullable=False)
+    description  = Column(Text, nullable=True)
+    price        = Column(Float, nullable=False)        # in INR
+    image_url    = Column(String, nullable=True)
+    category     = Column(String, default="Dry Food")   # Dry Food, Wet Food, Treats, Supplements
+    seller_name  = Column(String, default="StrayCare Shop")
+    stock        = Column(Integer, default=100)
+    is_available = Column(Boolean, default=True)
+    created_at   = Column(DateTime, default=datetime.utcnow)
+
+
+class FoodOrder(Base):
+    __tablename__ = "food_orders"
+    id            = Column(Integer, primary_key=True, index=True)
+    product_id    = Column(Integer, ForeignKey("food_products.id"), nullable=False)
+    product_name  = Column(String, nullable=False)   # snapshot at time of order
+    quantity      = Column(Integer, nullable=False, default=1)
+    total_price   = Column(Float, nullable=False)
+    buyer_name    = Column(String, nullable=False)
+    buyer_email   = Column(String, nullable=False)
+    buyer_phone   = Column(String, nullable=True)
+    delivery_address = Column(Text, nullable=False)
+    status        = Column(String, default="Pending")  # Pending, Confirmed, Delivered
+    ordered_at    = Column(DateTime, default=datetime.utcnow)
+    user_id       = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    product = relationship("FoodProduct")
