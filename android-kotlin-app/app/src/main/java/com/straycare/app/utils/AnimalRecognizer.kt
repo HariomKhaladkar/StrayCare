@@ -12,15 +12,16 @@ data class AnimalDetectionResult(
 )
 
 /**
- * AnimalRecognizer uses ML Kit Image Labeling.
+ * AnimalRecognizer — reliable animal-only detection.
  *
- * Strategy:
- *  1. Run ML Kit with a LOW confidence threshold so we get many labels.
- *  2. For each returned label, score it against each animal category using
- *     a weighted keyword map (exact match > prefix > substring).
- *  3. Sum scores per category across ALL labels — this "voting" approach
- *     is far more reliable than picking the single top label.
- *  4. Reject if high-confidence human labels appear with NO animal labels.
+ * Two-phase approach:
+ *  Phase 1 — HUMAN GATE: if ML Kit sees ANY human-related label
+ *             above a very LOW confidence (0.40), hard-reject immediately.
+ *             No exceptions, no "but there's also an animal" bypass.
+ *
+ *  Phase 2 — ANIMAL SCORING: weighted-keyword voting across all labels.
+ *             Each category's score = sum(label_confidence × keyword_weight).
+ *             Winner must exceed a minimum score or we return null.
  */
 object AnimalRecognizer {
 
@@ -28,84 +29,104 @@ object AnimalRecognizer {
         ImageLabelerOptions.Builder().setConfidenceThreshold(0.30f).build()
     )
 
-    // ─── Each entry: Pair(keyword, weight)
-    // Higher weight = stronger signal for that category.
-    // "exact" labels (like "Dog") get weight 3.0; generic get 1.0.
-    private data class Kw(val word: String, val weight: Float = 1.0f)
-
-    private val CATS = listOf(
-        // Animal categories
-        Pair("Dog",     listOf(Kw("dog", 3f), Kw("puppy", 3f), Kw("canine", 2f),
-                               Kw("hound", 2f), Kw("retriever", 2f), Kw("shepherd", 2f),
-                               Kw("bulldog", 2f), Kw("labrador", 2f), Kw("poodle", 2f),
-                               Kw("beagle", 2f), Kw("boxer", 2f), Kw("husky", 2f),
-                               Kw("terrier", 1.5f), Kw("sporting group", 1.5f),
-                               Kw("herding group", 1.5f), Kw("working dog", 1.5f),
-                               Kw("companion dog", 2f), Kw("dog breed", 2f),
-                               Kw("dachshund", 2f), Kw("spitz", 2f), Kw("rottweiler", 2f))),
-
-        Pair("Cat",     listOf(Kw("cat", 3f), Kw("kitten", 3f), Kw("feline", 2f),
-                               Kw("tabby", 2f), Kw("persian", 2f), Kw("siamese", 2f),
-                               Kw("felidae", 2f), Kw("felinae", 2f), Kw("maine coon", 2f),
-                               Kw("small to medium-sized cat", 2f),
-                               Kw("domestic short-haired cat", 2f),
-                               Kw("domestic long-haired cat", 2f),
-                               Kw("cat breed", 2f), Kw("wildcat", 1.5f))),
-
-        Pair("Bird",    listOf(Kw("bird", 3f), Kw("pigeon", 2f), Kw("parrot", 2f),
-                               Kw("owl", 2f), Kw("eagle", 2f), Kw("crow", 2f),
-                               Kw("sparrow", 2f), Kw("fowl", 1.5f), Kw("poultry", 1.5f),
-                               Kw("parakeet", 2f), Kw("beak", 1.5f), Kw("feather", 1f),
-                               Kw("hawk", 2f), Kw("falcon", 2f), Kw("robin", 2f),
-                               Kw("songbird", 2f), Kw("waterfowl", 2f),
-                               Kw("perching bird", 2f), Kw("passerine", 2f))),
-
-        Pair("Cow",     listOf(Kw("cow", 3f), Kw("cattle", 2f), Kw("bovine", 2f),
-                               Kw("bull", 2f), Kw("calf", 2f), Kw("dairy", 1.5f),
-                               Kw("water buffalo", 2f))),
-
-        Pair("Horse",   listOf(Kw("horse", 3f), Kw("pony", 2f), Kw("equine", 2f),
-                               Kw("stallion", 2f), Kw("mare", 2f), Kw("donkey", 2f),
-                               Kw("mule", 2f), Kw("foal", 2f))),
-
-        Pair("Monkey",  listOf(Kw("monkey", 3f), Kw("primate", 2f), Kw("ape", 2f),
-                               Kw("macaque", 2f), Kw("langur", 2f), Kw("baboon", 2f))),
-
-        Pair("Snake",   listOf(Kw("snake", 3f), Kw("serpent", 2f), Kw("cobra", 2f),
-                               Kw("python", 2f), Kw("viper", 2f))),
-
-        Pair("Reptile", listOf(Kw("lizard", 3f), Kw("reptile", 2f), Kw("gecko", 2f),
-                               Kw("iguana", 2f), Kw("chameleon", 2f),
-                               Kw("tortoise", 2f), Kw("turtle", 2f))),
-
-        Pair("Rabbit",  listOf(Kw("rabbit", 3f), Kw("hare", 2f), Kw("bunny", 2f))),
-
-        Pair("Rodent",  listOf(Kw("rat", 3f), Kw("mouse", 3f), Kw("squirrel", 2f),
-                               Kw("hamster", 2f), Kw("rodent", 2f), Kw("chipmunk", 2f))),
-
-        Pair("Pig",     listOf(Kw("pig", 3f), Kw("swine", 2f), Kw("boar", 2f),
-                               Kw("piglet", 2f))),
-
-        Pair("Goat",    listOf(Kw("goat", 3f), Kw("sheep", 3f), Kw("lamb", 2f),
-                               Kw("ram", 2f), Kw("ewe", 2f))),
+    // ─── Human labels — if ANY of these appear above threshold, HARD REJECT ──
+    // Keep this list conservative (only unambiguously human things).
+    private val HUMAN_LABELS = setOf(
+        "person", "human", "face", "man", "woman", "boy", "girl",
+        "child", "baby", "selfie", "portrait", "people", "crowd",
+        "forehead", "nose", "mouth", "eye", "eyebrow", "ear",
+        "chin", "cheek", "neck", "shoulder", "arm", "hand",
+        "finger", "hair", "beard", "mustache", "skin", "lip"
     )
 
-    private val EMOJI = mapOf(
-        "Dog" to "🐕", "Cat" to "🐈", "Bird" to "🐦", "Cow" to "🐄",
-        "Horse" to "🐎", "Monkey" to "🐒", "Snake" to "🐍", "Reptile" to "🦎",
-        "Rabbit" to "🐇", "Rodent" to "🐀", "Pig" to "🐷", "Goat" to "🐐"
+    // Confidence above which a human label triggers hard reject
+    private const val HUMAN_REJECT_THRESHOLD = 0.40f
+
+    // ─── Animal categories with weighted keywords ─────────────────────────────
+    // Each Kw(word, weight): higher weight = stronger species signal.
+    // Weights: 3.0 = exact species name, 2.0 = species-specific, 1.5 = breed/group
+    private data class Kw(val word: String, val weight: Float)
+
+    private data class AnimalCategory(
+        val name: String,
+        val emoji: String,
+        val keywords: List<Kw>
     )
 
-    // Human signals — if these appear with high confidence and no animals, reject.
-    private val HUMAN_WORDS = listOf(
-        "person", "human", "man", "woman", "boy", "girl", "child", "baby",
-        "face", "selfie", "portrait", "crowd", "people", "audience",
-        "forehead", "nose", "mouth", "shoulder", "hand", "hair", "beard"
+    private val CATEGORIES = listOf(
+        AnimalCategory("Dog", "🐕", listOf(
+            Kw("dog", 3.0f), Kw("puppy", 3.0f), Kw("canine", 2.5f),
+            Kw("hound", 2.0f), Kw("retriever", 2.0f), Kw("shepherd", 2.0f),
+            Kw("bulldog", 2.0f), Kw("labrador", 2.0f), Kw("poodle", 2.0f),
+            Kw("beagle", 2.0f), Kw("boxer", 2.0f), Kw("husky", 2.0f),
+            Kw("terrier", 1.5f), Kw("companion dog", 2.5f), Kw("dog breed", 2.0f),
+            Kw("herding group", 1.5f), Kw("working dog", 1.5f),
+            Kw("sporting group", 1.5f), Kw("toy group", 1.5f),
+            Kw("dachshund", 2.0f), Kw("rottweiler", 2.0f), Kw("spitz", 2.0f)
+        )),
+        AnimalCategory("Cat", "🐈", listOf(
+            Kw("cat", 3.0f), Kw("kitten", 3.0f), Kw("feline", 2.5f),
+            Kw("tabby", 2.5f), Kw("persian", 2.0f), Kw("siamese", 2.0f),
+            Kw("felidae", 2.0f), Kw("felinae", 2.0f), Kw("maine coon", 2.0f),
+            Kw("small to medium-sized cat", 2.5f), Kw("domestic cat", 2.5f),
+            Kw("cat breed", 2.0f), Kw("wildcat", 1.5f)
+        )),
+        AnimalCategory("Bird", "🐦", listOf(
+            Kw("bird", 3.0f), Kw("pigeon", 2.5f), Kw("parrot", 2.5f),
+            Kw("owl", 2.5f), Kw("eagle", 2.5f), Kw("crow", 2.5f),
+            Kw("sparrow", 2.0f), Kw("fowl", 2.0f), Kw("poultry", 2.0f),
+            Kw("parakeet", 2.0f), Kw("beak", 2.0f), Kw("feather", 1.5f),
+            Kw("hawk", 2.0f), Kw("falcon", 2.0f), Kw("songbird", 2.0f),
+            Kw("waterfowl", 2.0f), Kw("perching bird", 2.0f)
+        )),
+        AnimalCategory("Cow", "🐄", listOf(
+            Kw("cow", 3.0f), Kw("cattle", 2.5f), Kw("bovine", 2.5f),
+            Kw("bull", 2.5f), Kw("calf", 2.0f), Kw("water buffalo", 2.5f),
+            Kw("dairy cattle", 2.5f)
+        )),
+        AnimalCategory("Horse", "🐎", listOf(
+            Kw("horse", 3.0f), Kw("pony", 2.5f), Kw("equine", 2.5f),
+            Kw("stallion", 2.5f), Kw("mare", 2.5f), Kw("donkey", 2.5f),
+            Kw("mule", 2.0f), Kw("foal", 2.0f)
+        )),
+        AnimalCategory("Monkey", "🐒", listOf(
+            Kw("monkey", 3.0f), Kw("primate", 2.5f), Kw("ape", 2.5f),
+            Kw("macaque", 2.5f), Kw("langur", 2.5f), Kw("baboon", 2.5f),
+            Kw("chimpanzee", 2.5f)
+        )),
+        AnimalCategory("Snake", "🐍", listOf(
+            Kw("snake", 3.0f), Kw("serpent", 2.5f), Kw("cobra", 2.5f),
+            Kw("python", 2.5f), Kw("viper", 2.5f)
+        )),
+        AnimalCategory("Reptile", "🦎", listOf(
+            Kw("lizard", 3.0f), Kw("reptile", 2.5f), Kw("gecko", 2.5f),
+            Kw("iguana", 2.5f), Kw("chameleon", 2.5f),
+            Kw("tortoise", 2.5f), Kw("turtle", 2.5f)
+        )),
+        AnimalCategory("Rabbit", "🐇", listOf(
+            Kw("rabbit", 3.0f), Kw("hare", 2.5f), Kw("bunny", 2.5f)
+        )),
+        AnimalCategory("Rodent", "🐀", listOf(
+            Kw("rat", 3.0f), Kw("mouse", 3.0f), Kw("squirrel", 2.5f),
+            Kw("hamster", 2.5f), Kw("rodent", 2.5f), Kw("chipmunk", 2.0f)
+        )),
+        AnimalCategory("Pig", "🐷", listOf(
+            Kw("pig", 3.0f), Kw("swine", 2.5f), Kw("boar", 2.5f), Kw("piglet", 2.5f)
+        )),
+        AnimalCategory("Goat", "🐐", listOf(
+            Kw("goat", 3.0f), Kw("sheep", 3.0f), Kw("lamb", 2.5f),
+            Kw("ram", 2.0f), Kw("ewe", 2.0f)
+        ))
     )
 
-    private fun scoreLabel(labelText: String, keywords: List<Kw>): Float {
+    // Minimum weighted score required to report a detection.
+    // This prevents weak/accidental matches from being reported.
+    private const val MIN_SCORE_THRESHOLD = 0.80f
+
+    private fun labelScore(labelText: String, keywords: List<Kw>): Float {
         val lower = labelText.lowercase()
-        return keywords.filter { lower.contains(it.word) }.sumOf { it.weight.toDouble() }.toFloat()
+        // Only take the highest weight keyword that matches (avoid double-counting)
+        return keywords.filter { lower.contains(it.word) }.maxOfOrNull { it.weight } ?: 0f
     }
 
     fun analyze(bitmap: Bitmap, onResult: (AnimalDetectionResult?) -> Unit) {
@@ -114,44 +135,55 @@ object AnimalRecognizer {
             .addOnSuccessListener { labels ->
                 if (labels.isEmpty()) { onResult(null); return@addOnSuccessListener }
 
-                // Reject: strong human signal AND no animal signal
-                val humanScore = labels
-                    .filter { lbl -> HUMAN_WORDS.any { lbl.text.lowercase().contains(it) } }
-                    .sumOf { it.confidence.toDouble() }.toFloat()
+                // ── PHASE 1: HARD HUMAN GATE ──────────────────────────────────────
+                // If ML Kit returns ANY human-indicating label above threshold → reject.
+                // This is unconditional — no "but there's also an animal" bypass.
+                val strongestHumanLabel = labels
+                    .filter { lbl ->
+                        val lower = lbl.text.lowercase()
+                        HUMAN_LABELS.any { lower.contains(it) }
+                    }
+                    .maxByOrNull { it.confidence }
 
-                val hasAnimalHint = labels.any { lbl ->
-                    val lower = lbl.text.lowercase()
-                    CATS.any { (_, kws) -> kws.any { lower.contains(it.word) } }
-                }
-
-                if (humanScore > 0.75f && !hasAnimalHint) {
+                if (strongestHumanLabel != null && strongestHumanLabel.confidence >= HUMAN_REJECT_THRESHOLD) {
                     onResult(null)
                     return@addOnSuccessListener
                 }
 
-                // Score each category: sum (label_confidence × keyword_weight) across ALL labels
-                val scores = CATS.map { (catName, kws) ->
-                    val totalScore = labels.sumOf { lbl ->
-                        (scoreLabel(lbl.text, kws) * lbl.confidence).toDouble()
+                // ── PHASE 2: WEIGHTED ANIMAL SCORING ─────────────────────────────
+                // For each category: sum(label_confidence × best_matching_keyword_weight)
+                val categoryScores = CATEGORIES.map { category ->
+                    val score = labels.sumOf { lbl ->
+                        (labelScore(lbl.text, category.keywords) * lbl.confidence).toDouble()
                     }.toFloat()
-                    catName to totalScore
+                    category to score
                 }
 
-                val best = scores.filter { it.second > 0.25f }.maxByOrNull { it.second }
+                val best = categoryScores
+                    .filter { (_, score) -> score >= MIN_SCORE_THRESHOLD }
+                    .maxByOrNull { (_, score) -> score }
 
-                if (best != null) {
-                    // Confidence = capped at 98 so it never shows 100
-                    val conf = ((best.second / labels.maxOf { it.confidence }) * 95).toInt().coerceIn(50, 98)
-                    onResult(
-                        AnimalDetectionResult(
-                            label = best.first,
-                            confidence = conf,
-                            emoji = EMOJI[best.first] ?: "🐾"
-                        )
-                    )
-                } else {
+                if (best == null) {
                     onResult(null)
+                    return@addOnSuccessListener
                 }
+
+                val (category, score) = best
+
+                // Compute honest confidence: normalize score by max possible score
+                // (if every label matched at weight 3.0 × 1.0 confidence).
+                // Then map to a 60–95% display range so we never show 100%.
+                val maxPossible = labels.sumOf { it.confidence.toDouble() }.toFloat() * 3.0f
+                val rawPercent = if (maxPossible > 0) (score / maxPossible) * 100f else 0f
+                val displayConfidence = rawPercent.toInt().coerceIn(60, 95)
+
+                onResult(
+                    AnimalDetectionResult(
+                        label = category.name,
+                        confidence = displayConfidence,
+                        emoji = category.emoji
+                    )
+                )
             }
             .addOnFailureListener { onResult(null) }
     }
