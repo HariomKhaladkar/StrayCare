@@ -20,14 +20,13 @@ from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
 import razorpay  
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
-RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
+# Use env vars in production; fall back to test keys for development/Railway
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_Sc28etyyVCB7jl")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "yUGuodHEDNpl4gmf7lRD1mFA")
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "x8Ch_TaqZSie27e")
 RAZORPAY_MODE = os.getenv("RAZORPAY_MODE", "TEST")
 
-if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
-    print("Warning: Razorpay keys not configured. Donations with real Razorpay will fail.")
-    
+print(f"[Razorpay] Mode={RAZORPAY_MODE} KeyID={RAZORPAY_KEY_ID[:12]}...")
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 

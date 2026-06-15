@@ -13,135 +13,140 @@ data class AnimalDetectionResult(
 
 object AnimalRecognizer {
     private val labeler = ImageLabeling.getClient(
-        ImageLabelerOptions.Builder().setConfidenceThreshold(0.40f).build()
+        ImageLabelerOptions.Builder().setConfidenceThreshold(0.35f).build()
     )
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ML Kit uses Google Knowledge-Graph labels. These are the actual strings
-    // it returns for animals. Keep this comprehensive.
-    // ─────────────────────────────────────────────────────────────────────────
-    private val DOG_KEYWORDS = setOf(
-        "dog", "puppy", "canine", "hound", "pup",
-        "dog breed", "dog breed group", "sporting group", "herding group",
-        "toy group", "terrier", "working dog", "companion dog",
-        "retriever", "shepherd", "bulldog", "labrador", "poodle",
-        "beagle", "boxer", "husky", "dachshund", "rottweiler",
-        "spitz", "maltese", "shih tzu"
+    // ─── Category keyword maps (actual ML Kit Knowledge Graph labels) ──────────
+    // ML Kit does NOT return "dog" or "cat" directly.
+    // It returns labels like: "Dog breed group", "Companion dog", "Sporting Group",
+    // "Small to medium-sized cats", "Carnivore", etc.
+    private val DOG_WORDS = listOf(
+        "dog", "puppy", "canine", "hound", "retriever", "shepherd", "bulldog",
+        "labrador", "poodle", "beagle", "boxer", "husky", "dachshund",
+        "rottweiler", "spitz", "terrier", "herding", "sporting group",
+        "working dog", "companion dog", "dog breed"
     )
 
-    private val CAT_KEYWORDS = setOf(
-        "cat", "kitten", "feline", "tabby", "kitty",
-        "cat breed", "small to medium-sized cats",
-        "domestic short-haired cat", "domestic long-haired cat",
-        "whiskers", "persian", "siamese", "maine coon"
+    private val CAT_WORDS = listOf(
+        "cat", "kitten", "feline", "tabby", "persian", "siamese",
+        "maine coon", "small to medium-sized cat", "domestic cat",
+        "cat breed", "felidae", "felinae", "wildcat"
     )
 
-    private val BIRD_KEYWORDS = setOf(
-        "bird", "pigeon", "parrot", "owl", "eagle", "crow",
-        "sparrow", "finch", "fowl", "poultry", "parakeet",
-        "cockatiel", "robin", "hawk", "falcon", "kite",
-        "feather", "beak", "talon", "perching bird"
+    private val BIRD_WORDS = listOf(
+        "bird", "pigeon", "parrot", "owl", "eagle", "crow", "sparrow",
+        "finch", "fowl", "poultry", "parakeet", "cockatiel", "robin",
+        "hawk", "falcon", "feather", "beak", "perching bird",
+        "songbird", "passerine", "waterfowl", "seabird"
     )
 
-    private val COW_KEYWORDS = setOf(
-        "cow", "bull", "cattle", "bovine", "calf", "ox",
-        "dairy cow", "water buffalo"
+    private val COW_WORDS = listOf(
+        "cow", "bull", "cattle", "bovine", "calf", "ox", "dairy", "water buffalo"
     )
 
-    private val HORSE_KEYWORDS = setOf(
-        "horse", "pony", "equine", "stallion", "mare", "foal",
-        "donkey", "mule"
+    private val HORSE_WORDS = listOf(
+        "horse", "pony", "equine", "stallion", "mare", "foal", "donkey", "mule"
     )
 
-    private val OTHER_ANIMAL_KEYWORDS = setOf(
-        "goat", "sheep", "pig", "rabbit", "hare",
-        "monkey", "primate", "deer", "fox", "wolf",
-        "snake", "reptile", "lizard", "turtle", "tortoise",
-        "rodent", "rat", "mouse", "squirrel", "hamster",
-        "elephant", "bear", "camel", "animal", "mammal",
-        "carnivore", "herbivore", "omnivore",
-        "stray", "wildlife", "livestock",
-        "paw", "snout", "muzzle", "fur", "claw",
-        "working animal", "domestic animal"
+    private val MONKEY_WORDS = listOf(
+        "monkey", "primate", "ape", "macaque", "langur", "baboon", "chimpanzee"
     )
 
-    private val ALL_ANIMAL_KEYWORDS: Set<String> =
-        DOG_KEYWORDS + CAT_KEYWORDS + BIRD_KEYWORDS + COW_KEYWORDS +
-        HORSE_KEYWORDS + OTHER_ANIMAL_KEYWORDS
-
-    // Labels that DISQUALIFY the image — these mean it's a human photo
-    private val HUMAN_BLOCKLIST = setOf(
-        "person", "human", "face", "selfie", "skin", "head",
-        "man", "woman", "boy", "girl", "child", "baby", "people",
-        "forehead", "nose", "mouth", "lip", "eye", "eyebrow",
-        "shoulder", "arm", "hand", "finger", "hair", "beard",
-        "portrait", "fashion", "clothing", "shirt", "dress",
-        "glasses", "smile", "cheek", "chin", "jaw", "neck",
-        "crowd", "audience", "spectator"
+    private val SNAKE_WORDS = listOf(
+        "snake", "serpent", "cobra", "python", "viper", "reptile", "lizard",
+        "gecko", "iguana", "chameleon", "tortoise", "turtle"
     )
 
-    private fun matchesAny(text: String, keywords: Set<String>): Boolean {
-        val lower = text.lowercase()
-        return keywords.any { lower.contains(it) }
-    }
+    private val RABBIT_WORDS = listOf(
+        "rabbit", "hare", "bunny", "lagomorph"
+    )
 
-    private fun getCategory(label: String): String {
+    private val RODENT_WORDS = listOf(
+        "rat", "mouse", "squirrel", "hamster", "rodent", "gerbil", "chipmunk"
+    )
+
+    private val PIG_WORDS = listOf("pig", "boar", "swine", "pork", "piglet")
+
+    private val GOAT_WORDS = listOf("goat", "sheep", "lamb", "goatling", "ram", "ewe")
+
+    // Generic animal words that confirm an animal is present but don't specify which
+    private val GENERIC_ANIMAL_WORDS = listOf(
+        "animal", "mammal", "carnivore", "herbivore", "omnivore",
+        "vertebrate", "livestock", "wildlife", "stray", "fur", "paw",
+        "snout", "muzzle", "claw", "tail", "whisker", "domestic animal",
+        "working animal", "pet"
+    )
+
+    // Labels that mean it's a human photo — reject these
+    private val HUMAN_WORDS = listOf(
+        "person", "human", "face", "selfie", "man", "woman", "boy", "girl",
+        "child", "baby", "people", "forehead", "nose", "mouth", "lip", "eye",
+        "shoulder", "arm", "hand", "finger", "hair", "beard", "portrait",
+        "fashion", "clothing", "shirt", "dress", "glasses", "smile",
+        "cheek", "chin", "crowd", "audience"
+    )
+
+    private data class Category(val name: String, val emoji: String, val words: List<String>)
+
+    private val CATEGORIES = listOf(
+        Category("Dog", "🐕", DOG_WORDS),
+        Category("Cat", "🐈", CAT_WORDS),
+        Category("Bird", "🐦", BIRD_WORDS),
+        Category("Cow", "🐄", COW_WORDS),
+        Category("Horse", "🐎", HORSE_WORDS),
+        Category("Monkey", "🐒", MONKEY_WORDS),
+        Category("Snake / Reptile", "🐍", SNAKE_WORDS),
+        Category("Rabbit", "🐇", RABBIT_WORDS),
+        Category("Rodent", "🐀", RODENT_WORDS),
+        Category("Pig", "🐷", PIG_WORDS),
+        Category("Goat / Sheep", "🐐", GOAT_WORDS),
+        Category("Animal", "🐾", GENERIC_ANIMAL_WORDS)
+    )
+
+    private fun matchScore(label: String, words: List<String>): Float {
         val lower = label.lowercase()
-        return when {
-            DOG_KEYWORDS.any { lower.contains(it) } -> "Dog"
-            CAT_KEYWORDS.any { lower.contains(it) } -> "Cat"
-            BIRD_KEYWORDS.any { lower.contains(it) } -> "Bird"
-            COW_KEYWORDS.any { lower.contains(it) } -> "Cow"
-            HORSE_KEYWORDS.any { lower.contains(it) } -> "Horse"
-            else -> label  // Return the actual label for other animals
-        }
-    }
-
-    private fun getEmoji(category: String): String {
-        return when {
-            category.equals("Dog", ignoreCase = true) -> "🐕"
-            category.equals("Cat", ignoreCase = true) -> "🐈"
-            category.equals("Bird", ignoreCase = true) -> "🐦"
-            category.equals("Cow", ignoreCase = true) -> "🐄"
-            category.equals("Horse", ignoreCase = true) -> "🐎"
-            category.lowercase().contains("goat") || category.lowercase().contains("sheep") -> "🐐"
-            category.lowercase().contains("monkey") || category.lowercase().contains("primate") -> "🐒"
-            category.lowercase().contains("snake") || category.lowercase().contains("reptile") -> "🐍"
-            category.lowercase().contains("rabbit") || category.lowercase().contains("hare") -> "🐇"
-            category.lowercase().contains("rat") || category.lowercase().contains("mouse") || category.lowercase().contains("rodent") -> "🐀"
-            category.lowercase().contains("pig") -> "🐷"
-            else -> "🐾"
-        }
+        return if (words.any { lower.contains(it) }) 1f else 0f
     }
 
     fun analyze(bitmap: Bitmap, onResult: (AnimalDetectionResult?) -> Unit) {
         val image = InputImage.fromBitmap(bitmap, 0)
         labeler.process(image)
             .addOnSuccessListener { labels ->
-                // Step 1: Reject if strong human signals AND no animal signals
-                val humanLabels = labels.filter { matchesAny(it.text, HUMAN_BLOCKLIST) }
-                val animalLabels = labels.filter { matchesAny(it.text, ALL_ANIMAL_KEYWORDS) }
+                // ── Step 1: Reject if strong human signal with NO animal signal ──
+                val humanScore = labels.filter { lbl ->
+                    HUMAN_WORDS.any { lbl.text.lowercase().contains(it) }
+                }.sumOf { it.confidence.toDouble() }.toFloat()
 
-                val hasStrongHuman = humanLabels.any { it.confidence >= 0.70f }
-                val hasAnyAnimal = animalLabels.isNotEmpty()
+                val anyAnimalSignal = labels.any { lbl ->
+                    val lower = lbl.text.lowercase()
+                    CATEGORIES.any { cat -> cat.words.any { lower.contains(it) } }
+                }
 
-                if (hasStrongHuman && !hasAnyAnimal) {
+                if (humanScore > 0.65f && !anyAnimalSignal) {
                     onResult(null)
                     return@addOnSuccessListener
                 }
 
-                // Step 2: Pick the best-confidence animal label
-                val bestAnimal = animalLabels
-                    .filter { it.confidence >= 0.45f }
-                    .maxByOrNull { it.confidence }
+                // ── Step 2: Score each category by SUMMING confidence across all labels ──
+                // This is far more accurate than picking the single top label.
+                val categoryScores = CATEGORIES.associateWith { category ->
+                    labels.sumOf { lbl ->
+                        (matchScore(lbl.text, category.words) * lbl.confidence).toDouble()
+                    }.toFloat()
+                }
 
-                if (bestAnimal != null) {
-                    val category = getCategory(bestAnimal.text)
+                // ── Step 3: Pick the category with the highest total score ──
+                val best = categoryScores.entries
+                    .filter { it.value > 0.20f }   // minimum confidence threshold
+                    .maxByOrNull { it.value }
+
+                if (best != null) {
+                    val avgConfidence = (best.value * 100).toInt().coerceAtMost(99)
                     onResult(
                         AnimalDetectionResult(
-                            label = category,
-                            confidence = (bestAnimal.confidence * 100).toInt(),
-                            emoji = getEmoji(category)
+                            label = best.key.name,
+                            confidence = avgConfidence,
+                            emoji = best.key.emoji
                         )
                     )
                 } else {
