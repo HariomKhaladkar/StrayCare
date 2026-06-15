@@ -39,6 +39,10 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
+    // Prevent TFLite model file from being compressed
+    aaptOptions {
+        noCompress += "tflite"
+    }
 }
 
 dependencies {
@@ -74,8 +78,10 @@ dependencies {
     // Coil for images
     implementation("io.coil-kt:coil-compose:2.5.0")
     
-    // ML Kit Image Labeling for AI Animal Prediction
-    implementation("com.google.mlkit:image-labeling:17.0.9")
+    // TensorFlow Lite Task Vision — EfficientNet animal classifier
+    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite:2.13.0")
     
     // Encrypted SharedPreferences for Token Storage
     implementation("androidx.security:security-crypto-ktx:1.1.0-alpha06")

@@ -345,7 +345,7 @@ fun CameraAndLocationView(context: Context) {
                                         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                                             capturedImageFile = file
                                             val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-                                            AnimalRecognizer.analyze(bitmap) { result ->
+                                            AnimalRecognizer.analyze(context, bitmap) { result ->
                                                 isAnalyzing = false
                                                 animalPrediction = result
                                                 animalDetected = result != null

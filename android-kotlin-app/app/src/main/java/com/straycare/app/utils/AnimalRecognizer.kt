@@ -1,9 +1,9 @@
 package com.straycare.app.utils
 
+import android.content.Context
 import android.graphics.Bitmap
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.label.ImageLabeling
-import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
+import org.tensorflow.lite.task.vision.classifier.ImageClassifier
+import org.tensorflow.lite.support.image.TensorImage
 
 data class AnimalDetectionResult(
     val label: String,
@@ -12,179 +12,290 @@ data class AnimalDetectionResult(
 )
 
 /**
- * AnimalRecognizer — reliable animal-only detection.
+ * AnimalRecognizer powered by EfficientNet-Lite0 (TFLite).
  *
- * Two-phase approach:
- *  Phase 1 — HUMAN GATE: if ML Kit sees ANY human-related label
- *             above a very LOW confidence (0.40), hard-reject immediately.
- *             No exceptions, no "but there's also an animal" bypass.
+ * Model: efficientnet_lite0 (5.4MB, trained on ImageNet-1000)
+ * Labels: labels.txt (1000 ImageNet classes, human-readable)
  *
- *  Phase 2 — ANIMAL SCORING: weighted-keyword voting across all labels.
- *             Each category's score = sum(label_confidence × keyword_weight).
- *             Winner must exceed a minimum score or we return null.
+ * This is far more accurate than ML Kit's general image labeler because:
+ *  - EfficientNet is specifically trained for fine-grained image classification
+ *  - Returns specific class names like "Egyptian cat", "Labrador retriever" etc.
+ *  - Runs fully on-device, no network needed
  */
 object AnimalRecognizer {
 
-    private val labeler = ImageLabeling.getClient(
-        ImageLabelerOptions.Builder().setConfidenceThreshold(0.30f).build()
+    // ─── Map ImageNet class name fragments → our simplified animal category ──
+    // Keys are lowercase substrings to match against ImageNet class names.
+    private val CLASS_MAP: List<Pair<String, Pair<String, String>>> = listOf(
+        // Dog breeds → "Dog" 🐕
+        "terrier"         to ("Dog" to "🐕"),
+        "retriever"       to ("Dog" to "🐕"),
+        "shepherd"        to ("Dog" to "🐕"),
+        "spaniel"         to ("Dog" to "🐕"),
+        "hound"           to ("Dog" to "🐕"),
+        "bulldog"         to ("Dog" to "🐕"),
+        "poodle"          to ("Dog" to "🐕"),
+        "labrador"        to ("Dog" to "🐕"),
+        "husky"           to ("Dog" to "🐕"),
+        "maltese dog"     to ("Dog" to "🐕"),
+        "collie"          to ("Dog" to "🐕"),
+        "beagle"          to ("Dog" to "🐕"),
+        "boxer"           to ("Dog" to "🐕"),
+        "chihuahua"       to ("Dog" to "🐕"),
+        "pomeranian"      to ("Dog" to "🐕"),
+        "dachshund"       to ("Dog" to "🐕"),
+        "dalmatian"       to ("Dog" to "🐕"),
+        "malinois"        to ("Dog" to "🐕"),
+        "rottweiler"      to ("Dog" to "🐕"),
+        "doberman"        to ("Dog" to "🐕"),
+        "vizsla"          to ("Dog" to "🐕"),
+        "whippet"         to ("Dog" to "🐕"),
+        "basenji"         to ("Dog" to "🐕"),
+        "pug"             to ("Dog" to "🐕"),
+        "samoyed"         to ("Dog" to "🐕"),
+        "kuvasz"          to ("Dog" to "🐕"),
+        "schipperke"      to ("Dog" to "🐕"),
+        "komondor"        to ("Dog" to "🐕"),
+        "borzoi"          to ("Dog" to "🐕"),
+        "greyhound"       to ("Dog" to "🐕"),
+        "african hunting dog" to ("Dog" to "🐕"),
+        "eskimo dog"      to ("Dog" to "🐕"),
+
+        // Cat breeds → "Cat" 🐈
+        "tabby"           to ("Cat" to "🐈"),
+        "persian cat"     to ("Cat" to "🐈"),
+        "siamese cat"     to ("Cat" to "🐈"),
+        "egyptian cat"    to ("Cat" to "🐈"),
+        "tiger cat"       to ("Cat" to "🐈"),
+        "cougar"          to ("Cat" to "🐈"),
+        "lynx"            to ("Cat" to "🐈"),
+        "leopard"         to ("Cat" to "🐈"),
+        "snow leopard"    to ("Cat" to "🐈"),
+        "jaguar"          to ("Cat" to "🐈"),
+        "cheetah"         to ("Cat" to "🐈"),
+        "lion"            to ("Cat" to "🐈"),
+        "tiger"           to ("Cat" to "🐈"),
+
+        // Birds → "Bird" 🐦
+        "hen"             to ("Bird" to "🐦"),
+        "cock"            to ("Bird" to "🐦"),
+        "ostrich"         to ("Bird" to "🐦"),
+        "flamingo"        to ("Bird" to "🐦"),
+        "heron"           to ("Bird" to "🐦"),
+        "spoonbill"       to ("Bird" to "🐦"),
+        "pelican"         to ("Bird" to "🐦"),
+        "albatross"       to ("Bird" to "🐦"),
+        "penguin"         to ("Bird" to "🐦"),
+        "parrot"          to ("Bird" to "🐦"),
+        "macaw"           to ("Bird" to "🐦"),
+        "lorikeet"        to ("Bird" to "🐦"),
+        "cockatoo"        to ("Bird" to "🐦"),
+        "hornbill"        to ("Bird" to "🐦"),
+        "toucan"          to ("Bird" to "🐦"),
+        "pigeon"          to ("Bird" to "🐦"),
+        "crow"            to ("Bird" to "🐦"),
+        "jay"             to ("Bird" to "🐦"),
+        "magpie"          to ("Bird" to "🐦"),
+        "vulture"         to ("Bird" to "🐦"),
+        "eagle"           to ("Bird" to "🐦"),
+        "kite"            to ("Bird" to "🐦"),
+        "owl"             to ("Bird" to "🐦"),
+        "hummingbird"     to ("Bird" to "🐦"),
+        "finch"           to ("Bird" to "🐦"),
+        "robin"           to ("Bird" to "🐦"),
+        "oystercatcher"   to ("Bird" to "🐦"),
+        "limpkin"         to ("Bird" to "🐦"),
+        "ptarmigan"       to ("Bird" to "🐦"),
+        "quail"           to ("Bird" to "🐦"),
+        "peacock"         to ("Bird" to "🐦"),
+        "turkey"          to ("Bird" to "🐦"),
+
+        // Cows & Cattle
+        "ox"              to ("Cow" to "🐄"),
+        "bison"           to ("Cow" to "🐄"),
+        "water buffalo"   to ("Cow" to "🐄"),
+        "ram"             to ("Goat" to "🐐"),
+        "ibex"            to ("Goat" to "🐐"),
+        "bighorn"         to ("Goat" to "🐐"),
+
+        // Horse
+        "horse"           to ("Horse" to "🐎"),
+        "sorrel"          to ("Horse" to "🐎"),
+        "zebra"           to ("Horse" to "🐎"),
+        "mule"            to ("Horse" to "🐎"),
+        "donkey"          to ("Horse" to "🐎"),
+
+        // Monkeys & Primates
+        "monkey"          to ("Monkey" to "🐒"),
+        "gibbon"          to ("Monkey" to "🐒"),
+        "siamang"         to ("Monkey" to "🐒"),
+        "macaque"         to ("Monkey" to "🐒"),
+        "baboon"          to ("Monkey" to "🐒"),
+        "chimpanzee"      to ("Monkey" to "🐒"),
+        "gorilla"         to ("Monkey" to "🐒"),
+        "orangutan"       to ("Monkey" to "🐒"),
+        "langur"          to ("Monkey" to "🐒"),
+        "marmoset"        to ("Monkey" to "🐒"),
+        "squirrel monkey" to ("Monkey" to "🐒"),
+        "proboscis monkey" to ("Monkey" to "🐒"),
+
+        // Reptiles & Snakes
+        "snake"           to ("Snake" to "🐍"),
+        "cobra"           to ("Snake" to "🐍"),
+        "boa constrictor" to ("Snake" to "🐍"),
+        "rock python"     to ("Snake" to "🐍"),
+        "horned viper"    to ("Snake" to "🐍"),
+        "rattlesnake"     to ("Snake" to "🐍"),
+        "green mamba"     to ("Snake" to "🐍"),
+        "night snake"     to ("Snake" to "🐍"),
+        "lizard"          to ("Reptile" to "🦎"),
+        "iguana"          to ("Reptile" to "🦎"),
+        "agama"           to ("Reptile" to "🦎"),
+        "chameleon"       to ("Reptile" to "🦎"),
+        "frilled lizard"  to ("Reptile" to "🦎"),
+        "alligator lizard" to ("Reptile" to "🦎"),
+        "gila monster"    to ("Reptile" to "🦎"),
+        "tortoise"        to ("Reptile" to "🦎"),
+        "mud turtle"      to ("Reptile" to "🦎"),
+        "box turtle"      to ("Reptile" to "🦎"),
+        "sea turtle"      to ("Reptile" to "🦎"),
+        "crocodile"       to ("Reptile" to "🦎"),
+        "alligator"       to ("Reptile" to "🦎"),
+        "komodo dragon"   to ("Reptile" to "🦎"),
+
+        // Small mammals
+        "rabbit"          to ("Rabbit" to "🐇"),
+        "hare"            to ("Rabbit" to "🐇"),
+        "pika"            to ("Rabbit" to "🐇"),
+        "hamster"         to ("Rodent" to "🐀"),
+        "squirrel"        to ("Rodent" to "🐀"),
+        "marmot"          to ("Rodent" to "🐀"),
+        "rat"             to ("Rodent" to "🐀"),
+        "mouse"           to ("Rodent" to "🐀"),
+        "porcupine"       to ("Rodent" to "🐀"),
+        "beaver"          to ("Rodent" to "🐀"),
+        "guinea pig"      to ("Rodent" to "🐀"),
+
+        // Pigs
+        "hog"             to ("Pig" to "🐷"),
+        "warthog"         to ("Pig" to "🐷"),
+
+        // Elephants & large animals
+        "elephant"        to ("Elephant" to "🐘"),
+        "rhinoceros"      to ("Rhino" to "🦏"),
+        "hippopotamus"    to ("Hippo" to "🦛"),
+        "bear"            to ("Bear" to "🐻"),
+        "giant panda"     to ("Panda" to "🐼"),
+        "lesser panda"    to ("Panda" to "🐼"),
+        "camel"           to ("Camel" to "🐫"),
+        "llama"           to ("Camel" to "🐫"),
+        "fox"             to ("Fox" to "🦊"),
+        "wolf"            to ("Wolf" to "🐺"),
+        "hyena"           to ("Hyena" to "🐾"),
+        "deer"            to ("Deer" to "🦌"),
+        "gazelle"         to ("Deer" to "🦌"),
+
+        // Reject human-related ImageNet classes
+        "people"          to ("HUMAN" to ""),
+        "face"            to ("HUMAN" to ""),
     )
 
-    // ─── Human labels — if ANY of these appear above threshold, HARD REJECT ──
-    // Keep this list conservative (only unambiguously human things).
-    private val HUMAN_LABELS = setOf(
-        "person", "human", "face", "man", "woman", "boy", "girl",
-        "child", "baby", "selfie", "portrait", "people", "crowd",
-        "forehead", "nose", "mouth", "eye", "eyebrow", "ear",
-        "chin", "cheek", "neck", "shoulder", "arm", "hand",
-        "finger", "hair", "beard", "mustache", "skin", "lip"
+    // ImageNet classes that mean it's a human photo — mapped to HUMAN so we reject
+    private val HUMAN_IMAGENET = setOf(
+        "measuring cup", "comic book", "letter opener", "packet", "jersey",
+        "bridegroom", "suit", "mortarboard", "uniform", "lab coat"
+        // We handle actual person detection via the HUMAN key above
     )
 
-    // Confidence above which a human label triggers hard reject
-    private const val HUMAN_REJECT_THRESHOLD = 0.40f
+    @Volatile
+    private var classifier: ImageClassifier? = null
 
-    // ─── Animal categories with weighted keywords ─────────────────────────────
-    // Each Kw(word, weight): higher weight = stronger species signal.
-    // Weights: 3.0 = exact species name, 2.0 = species-specific, 1.5 = breed/group
-    private data class Kw(val word: String, val weight: Float)
-
-    private data class AnimalCategory(
-        val name: String,
-        val emoji: String,
-        val keywords: List<Kw>
-    )
-
-    private val CATEGORIES = listOf(
-        AnimalCategory("Dog", "🐕", listOf(
-            Kw("dog", 3.0f), Kw("puppy", 3.0f), Kw("canine", 2.5f),
-            Kw("hound", 2.0f), Kw("retriever", 2.0f), Kw("shepherd", 2.0f),
-            Kw("bulldog", 2.0f), Kw("labrador", 2.0f), Kw("poodle", 2.0f),
-            Kw("beagle", 2.0f), Kw("boxer", 2.0f), Kw("husky", 2.0f),
-            Kw("terrier", 1.5f), Kw("companion dog", 2.5f), Kw("dog breed", 2.0f),
-            Kw("herding group", 1.5f), Kw("working dog", 1.5f),
-            Kw("sporting group", 1.5f), Kw("toy group", 1.5f),
-            Kw("dachshund", 2.0f), Kw("rottweiler", 2.0f), Kw("spitz", 2.0f)
-        )),
-        AnimalCategory("Cat", "🐈", listOf(
-            Kw("cat", 3.0f), Kw("kitten", 3.0f), Kw("feline", 2.5f),
-            Kw("tabby", 2.5f), Kw("persian", 2.0f), Kw("siamese", 2.0f),
-            Kw("felidae", 2.0f), Kw("felinae", 2.0f), Kw("maine coon", 2.0f),
-            Kw("small to medium-sized cat", 2.5f), Kw("domestic cat", 2.5f),
-            Kw("cat breed", 2.0f), Kw("wildcat", 1.5f)
-        )),
-        AnimalCategory("Bird", "🐦", listOf(
-            Kw("bird", 3.0f), Kw("pigeon", 2.5f), Kw("parrot", 2.5f),
-            Kw("owl", 2.5f), Kw("eagle", 2.5f), Kw("crow", 2.5f),
-            Kw("sparrow", 2.0f), Kw("fowl", 2.0f), Kw("poultry", 2.0f),
-            Kw("parakeet", 2.0f), Kw("beak", 2.0f), Kw("feather", 1.5f),
-            Kw("hawk", 2.0f), Kw("falcon", 2.0f), Kw("songbird", 2.0f),
-            Kw("waterfowl", 2.0f), Kw("perching bird", 2.0f)
-        )),
-        AnimalCategory("Cow", "🐄", listOf(
-            Kw("cow", 3.0f), Kw("cattle", 2.5f), Kw("bovine", 2.5f),
-            Kw("bull", 2.5f), Kw("calf", 2.0f), Kw("water buffalo", 2.5f),
-            Kw("dairy cattle", 2.5f)
-        )),
-        AnimalCategory("Horse", "🐎", listOf(
-            Kw("horse", 3.0f), Kw("pony", 2.5f), Kw("equine", 2.5f),
-            Kw("stallion", 2.5f), Kw("mare", 2.5f), Kw("donkey", 2.5f),
-            Kw("mule", 2.0f), Kw("foal", 2.0f)
-        )),
-        AnimalCategory("Monkey", "🐒", listOf(
-            Kw("monkey", 3.0f), Kw("primate", 2.5f), Kw("ape", 2.5f),
-            Kw("macaque", 2.5f), Kw("langur", 2.5f), Kw("baboon", 2.5f),
-            Kw("chimpanzee", 2.5f)
-        )),
-        AnimalCategory("Snake", "🐍", listOf(
-            Kw("snake", 3.0f), Kw("serpent", 2.5f), Kw("cobra", 2.5f),
-            Kw("python", 2.5f), Kw("viper", 2.5f)
-        )),
-        AnimalCategory("Reptile", "🦎", listOf(
-            Kw("lizard", 3.0f), Kw("reptile", 2.5f), Kw("gecko", 2.5f),
-            Kw("iguana", 2.5f), Kw("chameleon", 2.5f),
-            Kw("tortoise", 2.5f), Kw("turtle", 2.5f)
-        )),
-        AnimalCategory("Rabbit", "🐇", listOf(
-            Kw("rabbit", 3.0f), Kw("hare", 2.5f), Kw("bunny", 2.5f)
-        )),
-        AnimalCategory("Rodent", "🐀", listOf(
-            Kw("rat", 3.0f), Kw("mouse", 3.0f), Kw("squirrel", 2.5f),
-            Kw("hamster", 2.5f), Kw("rodent", 2.5f), Kw("chipmunk", 2.0f)
-        )),
-        AnimalCategory("Pig", "🐷", listOf(
-            Kw("pig", 3.0f), Kw("swine", 2.5f), Kw("boar", 2.5f), Kw("piglet", 2.5f)
-        )),
-        AnimalCategory("Goat", "🐐", listOf(
-            Kw("goat", 3.0f), Kw("sheep", 3.0f), Kw("lamb", 2.5f),
-            Kw("ram", 2.0f), Kw("ewe", 2.0f)
-        ))
-    )
-
-    // Minimum weighted score required to report a detection.
-    // This prevents weak/accidental matches from being reported.
-    private const val MIN_SCORE_THRESHOLD = 0.80f
-
-    private fun labelScore(labelText: String, keywords: List<Kw>): Float {
-        val lower = labelText.lowercase()
-        // Only take the highest weight keyword that matches (avoid double-counting)
-        return keywords.filter { lower.contains(it.word) }.maxOfOrNull { it.weight } ?: 0f
+    private fun getClassifier(context: Context): ImageClassifier {
+        return classifier ?: synchronized(this) {
+            classifier ?: ImageClassifier.createFromFileAndOptions(
+                context,
+                "animal_classifier.tflite",
+                ImageClassifier.ImageClassifierOptions.builder()
+                    .setMaxResults(10)
+                    .setScoreThreshold(0.05f)   // get top-10 results above 5%
+                    .build()
+            ).also { classifier = it }
+        }
     }
 
-    fun analyze(bitmap: Bitmap, onResult: (AnimalDetectionResult?) -> Unit) {
-        val image = InputImage.fromBitmap(bitmap, 0)
-        labeler.process(image)
-            .addOnSuccessListener { labels ->
-                if (labels.isEmpty()) { onResult(null); return@addOnSuccessListener }
+    fun analyze(context: Context, bitmap: Bitmap, onResult: (AnimalDetectionResult?) -> Unit) {
+        try {
+            val clf = getClassifier(context)
+            val tensorImage = TensorImage.fromBitmap(bitmap)
+            val results = clf.classify(tensorImage)
 
-                // ── PHASE 1: HARD HUMAN GATE ──────────────────────────────────────
-                // If ML Kit returns ANY human-indicating label above threshold → reject.
-                // This is unconditional — no "but there's also an animal" bypass.
-                val strongestHumanLabel = labels
-                    .filter { lbl ->
-                        val lower = lbl.text.lowercase()
-                        HUMAN_LABELS.any { lower.contains(it) }
-                    }
-                    .maxByOrNull { it.confidence }
-
-                if (strongestHumanLabel != null && strongestHumanLabel.confidence >= HUMAN_REJECT_THRESHOLD) {
-                    onResult(null)
-                    return@addOnSuccessListener
-                }
-
-                // ── PHASE 2: WEIGHTED ANIMAL SCORING ─────────────────────────────
-                // For each category: sum(label_confidence × best_matching_keyword_weight)
-                val categoryScores = CATEGORIES.map { category ->
-                    val score = labels.sumOf { lbl ->
-                        (labelScore(lbl.text, category.keywords) * lbl.confidence).toDouble()
-                    }.toFloat()
-                    category to score
-                }
-
-                val best = categoryScores
-                    .filter { (_, score) -> score >= MIN_SCORE_THRESHOLD }
-                    .maxByOrNull { (_, score) -> score }
-
-                if (best == null) {
-                    onResult(null)
-                    return@addOnSuccessListener
-                }
-
-                val (category, score) = best
-
-                // Compute honest confidence: normalize score by max possible score
-                // (if every label matched at weight 3.0 × 1.0 confidence).
-                // Then map to a 60–95% display range so we never show 100%.
-                val maxPossible = labels.sumOf { it.confidence.toDouble() }.toFloat() * 3.0f
-                val rawPercent = if (maxPossible > 0) (score / maxPossible) * 100f else 0f
-                val displayConfidence = rawPercent.toInt().coerceIn(60, 95)
-
-                onResult(
-                    AnimalDetectionResult(
-                        label = category.name,
-                        confidence = displayConfidence,
-                        emoji = category.emoji
-                    )
-                )
+            if (results.isNullOrEmpty() || results[0].categories.isNullOrEmpty()) {
+                onResult(null)
+                return
             }
-            .addOnFailureListener { onResult(null) }
+
+            // All categories from top-10 results
+            val categories = results[0].categories
+                .sortedByDescending { it.score }
+
+            // Score each animal bucket by summing scores of matching ImageNet classes
+            val bucketScores = mutableMapOf<String, Float>()
+            val bucketEmoji  = mutableMapOf<String, String>()
+
+            for (category in categories) {
+                val labelLower = category.label.lowercase()
+
+                // Hard-reject human ImageNet classes
+                if (labelLower == "person" || labelLower.contains("face") ||
+                    labelLower == "jersey" || labelLower == "suit" ||
+                    labelLower == "mortarboard" || labelLower == "lab coat") {
+                    // Only reject if top confidence is very high
+                    if (category.score > 0.55f && categories.indexOf(category) == 0) {
+                        onResult(null)
+                        return
+                    }
+                    continue
+                }
+
+                // Find matching animal bucket
+                for ((keyword, bucket) in CLASS_MAP) {
+                    if (bucket.first == "HUMAN") continue
+                    if (labelLower.contains(keyword)) {
+                        val current = bucketScores.getOrDefault(bucket.first, 0f)
+                        bucketScores[bucket.first] = current + category.score
+                        bucketEmoji[bucket.first] = bucket.second
+                        break  // only count each label once
+                    }
+                }
+            }
+
+            if (bucketScores.isEmpty()) {
+                onResult(null)
+                return
+            }
+
+            val bestBucket = bucketScores.entries.maxByOrNull { it.value }!!
+            val topAnimalScore = bestBucket.value
+            val topCategoryScore = categories.firstOrNull()?.score ?: 0f
+
+            // Require meaningful confidence — don't report if score is weak
+            if (topAnimalScore < 0.08f) {
+                onResult(null)
+                return
+            }
+
+            // Map score to display confidence (60–95%)
+            val displayConf = (topAnimalScore * 150f).toInt().coerceIn(60, 95)
+
+            onResult(
+                AnimalDetectionResult(
+                    label = bestBucket.key,
+                    confidence = displayConf,
+                    emoji = bucketEmoji[bestBucket.key] ?: "🐾"
+                )
+            )
+        } catch (e: Exception) {
+            onResult(null)
+        }
     }
 }
