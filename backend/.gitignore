@@ -1,21 +1,24 @@
-# Python cache
-__pycache__/
-*.pyc
+﻿# Environment / secrets
+.env
+*.env
 
-# Virtual environment
+# Local database - never commit SQLite
+local.db
+*.db
+*.sqlite
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
 .venv/
 venv/
 env/
+.Python
 
-# SQLite local DB (optional to ignore)
-*.db
-
-# Uploaded files
+# Uploaded files (large, user-generated content)
 uploads/
 
-# Environment variables
-.env
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
