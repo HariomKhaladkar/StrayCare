@@ -1,0 +1,457 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.straycare.app"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:4:5-67
+11-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:4:22-64
+12    <uses-permission android:name="android.permission.CAMERA" />
+12-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:5:5-65
+12-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:5:22-62
+13    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+13-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:6:5-79
+13-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:6:22-76
+14    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+14-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:7:5-81
+14-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:7:22-78
+15
+16    <queries>
+16-->[androidx.camera:camera-extensions:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\a9a76917281101be3134206a1d5f85cd\transformed\jetified-camera-extensions-1.3.1\AndroidManifest.xml:22:5-26:15
+17        <intent>
+17-->[androidx.camera:camera-extensions:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\a9a76917281101be3134206a1d5f85cd\transformed\jetified-camera-extensions-1.3.1\AndroidManifest.xml:23:9-25:18
+18            <action android:name="androidx.camera.extensions.action.VENDOR_ACTION" />
+18-->[androidx.camera:camera-extensions:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\a9a76917281101be3134206a1d5f85cd\transformed\jetified-camera-extensions-1.3.1\AndroidManifest.xml:24:13-86
+18-->[androidx.camera:camera-extensions:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\a9a76917281101be3134206a1d5f85cd\transformed\jetified-camera-extensions-1.3.1\AndroidManifest.xml:24:21-83
+19        </intent>
+20        <intent>
+20-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:11:9-17:18
+21            <action android:name="android.intent.action.VIEW" />
+21-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:12:13-65
+21-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:12:21-62
+22
+23            <data
+23-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:14:13-16:38
+24                android:mimeType="*/*"
+24-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:15:17-39
+25                android:scheme="*" />
+25-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:16:17-35
+26        </intent>
+27        <intent>
+27-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:18:9-27:18
+28            <action android:name="android.intent.action.VIEW" />
+28-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:12:13-65
+28-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:12:21-62
+29
+30            <category android:name="android.intent.category.BROWSABLE" />
+30-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:21:13-74
+30-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:21:23-71
+31
+32            <data
+32-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:14:13-16:38
+33                android:host="pay"
+34                android:mimeType="*/*"
+34-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:15:17-39
+35                android:scheme="upi" />
+35-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:16:17-35
+36        </intent>
+37        <intent>
+37-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:28:9-30:18
+38            <action android:name="android.intent.action.MAIN" />
+38-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:20:17-69
+38-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:20:25-66
+39        </intent>
+40        <intent>
+40-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:31:9-35:18
+41            <action android:name="android.intent.action.SEND" />
+41-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:32:13-65
+41-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:32:21-62
+42
+43            <data android:mimeType="*/*" />
+43-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:14:13-16:38
+43-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:15:17-39
+44        </intent>
+45        <intent>
+45-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:36:9-38:18
+46            <action android:name="rzp.device_token.share" />
+46-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:37:13-61
+46-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:37:21-58
+47        </intent>
+48    </queries> <!-- For allowlist service -->
+49    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+49-->[com.google.mlkit:vision-internal-vkp:18.2.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\876907d6b9c9544da0680609272a5a0a\transformed\jetified-vision-internal-vkp-18.2.3\AndroidManifest.xml:7:5-79
+49-->[com.google.mlkit:vision-internal-vkp:18.2.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\876907d6b9c9544da0680609272a5a0a\transformed\jetified-vision-internal-vkp-18.2.3\AndroidManifest.xml:7:22-76
+50
+51    <uses-feature
+51-->[com.google.android.gms:play-services-maps:17.0.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\aa34c59ba2b0edbf8cb678adc7d4c69f\transformed\jetified-play-services-maps-17.0.0\AndroidManifest.xml:26:5-28:35
+52        android:glEsVersion="0x00020000"
+52-->[com.google.android.gms:play-services-maps:17.0.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\aa34c59ba2b0edbf8cb678adc7d4c69f\transformed\jetified-play-services-maps-17.0.0\AndroidManifest.xml:27:9-41
+53        android:required="true" />
+53-->[com.google.android.gms:play-services-maps:17.0.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\aa34c59ba2b0edbf8cb678adc7d4c69f\transformed\jetified-play-services-maps-17.0.0\AndroidManifest.xml:28:9-32
+54
+55    <permission
+55-->[androidx.core:core:1.12.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\2667c3af19223064515883316ecf0918\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+56        android:name="com.straycare.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+56-->[androidx.core:core:1.12.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\2667c3af19223064515883316ecf0918\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+57        android:protectionLevel="signature" />
+57-->[androidx.core:core:1.12.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\2667c3af19223064515883316ecf0918\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+58
+59    <uses-permission android:name="com.straycare.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+59-->[androidx.core:core:1.12.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\2667c3af19223064515883316ecf0918\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+59-->[androidx.core:core:1.12.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\2667c3af19223064515883316ecf0918\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+60
+61    <supports-screens
+61-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:9:5-12:40
+62        android:anyDensity="true"
+62-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:10:9-34
+63        android:largeScreens="true"
+63-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:11:9-36
+64        android:normalScreens="true" />
+64-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:12:9-37
+65
+66    <uses-feature
+66-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:14:5-16:36
+67        android:name="android.hardware.location.network"
+67-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:15:9-57
+68        android:required="false" />
+68-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:16:9-33
+69    <uses-feature
+69-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:17:5-19:36
+70        android:name="android.hardware.location.gps"
+70-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:18:9-53
+71        android:required="false" />
+71-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:19:9-33
+72    <uses-feature
+72-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:20:5-22:36
+73        android:name="android.hardware.telephony"
+73-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:21:9-50
+74        android:required="false" />
+74-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:22:9-33
+75    <uses-feature
+75-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:23:5-25:36
+76        android:name="android.hardware.wifi"
+76-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:24:9-45
+77        android:required="false" /> <!-- Normal permission, automatically granted on API 23+ -->
+77-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\Hariom\.gradle\caches\8.10\transforms\266037a3dd3f053416925b50a3fc03ee\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:25:9-33
+78    <uses-permission android:name="android.permission.READ_BASIC_PHONE_STATE" />
+78-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:10:5-81
+78-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:10:22-78
+79
+80    <application
+80-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:9:5-24:19
+81        android:allowBackup="true"
+81-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:10:9-35
+82        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+82-->[androidx.core:core:1.12.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\2667c3af19223064515883316ecf0918\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+83        android:extractNativeLibs="false"
+84        android:label="StrayCare"
+84-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:11:9-34
+85        android:supportsRtl="true"
+85-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:12:9-35
+86        android:theme="@style/Theme.StrayCare"
+86-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:13:9-47
+87        android:usesCleartextTraffic="true" >
+87-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:14:9-44
+88        <activity
+88-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:15:9-23:20
+89            android:name="com.straycare.app.MainActivity"
+89-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:16:13-41
+90            android:exported="true"
+90-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:17:13-36
+91            android:theme="@style/Theme.StrayCare" >
+91-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:18:13-51
+92            <intent-filter>
+92-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:19:13-22:29
+93                <action android:name="android.intent.action.MAIN" />
+93-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:20:17-69
+93-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:20:25-66
+94
+95                <category android:name="android.intent.category.LAUNCHER" />
+95-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:21:17-77
+95-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:21:27-74
+96            </intent-filter>
+97        </activity>
+98
+99        <uses-library
+99-->[androidx.camera:camera-extensions:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\a9a76917281101be3134206a1d5f85cd\transformed\jetified-camera-extensions-1.3.1\AndroidManifest.xml:29:9-31:40
+100            android:name="androidx.camera.extensions.impl"
+100-->[androidx.camera:camera-extensions:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\a9a76917281101be3134206a1d5f85cd\transformed\jetified-camera-extensions-1.3.1\AndroidManifest.xml:30:13-59
+101            android:required="false" />
+101-->[androidx.camera:camera-extensions:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\a9a76917281101be3134206a1d5f85cd\transformed\jetified-camera-extensions-1.3.1\AndroidManifest.xml:31:13-37
+102
+103        <service
+103-->[androidx.camera:camera-camera2:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\6a6a57b4d0f4bdf757c884009f59dae0\transformed\jetified-camera-camera2-1.3.1\AndroidManifest.xml:24:9-33:19
+104            android:name="androidx.camera.core.impl.MetadataHolderService"
+104-->[androidx.camera:camera-camera2:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\6a6a57b4d0f4bdf757c884009f59dae0\transformed\jetified-camera-camera2-1.3.1\AndroidManifest.xml:25:13-75
+105            android:enabled="false"
+105-->[androidx.camera:camera-camera2:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\6a6a57b4d0f4bdf757c884009f59dae0\transformed\jetified-camera-camera2-1.3.1\AndroidManifest.xml:26:13-36
+106            android:exported="false" >
+106-->[androidx.camera:camera-camera2:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\6a6a57b4d0f4bdf757c884009f59dae0\transformed\jetified-camera-camera2-1.3.1\AndroidManifest.xml:27:13-37
+107            <meta-data
+107-->[androidx.camera:camera-camera2:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\6a6a57b4d0f4bdf757c884009f59dae0\transformed\jetified-camera-camera2-1.3.1\AndroidManifest.xml:30:13-32:89
+108                android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER"
+108-->[androidx.camera:camera-camera2:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\6a6a57b4d0f4bdf757c884009f59dae0\transformed\jetified-camera-camera2-1.3.1\AndroidManifest.xml:31:17-103
+109                android:value="androidx.camera.camera2.Camera2Config$DefaultProvider" />
+109-->[androidx.camera:camera-camera2:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\6a6a57b4d0f4bdf757c884009f59dae0\transformed\jetified-camera-camera2-1.3.1\AndroidManifest.xml:32:17-86
+110        </service>
+111        <service
+111-->[com.google.mlkit:image-labeling:17.0.9] C:\Users\Hariom\.gradle\caches\8.10\transforms\e5aa530c8047df2c0ec75708d27d6c78\transformed\jetified-image-labeling-17.0.9\AndroidManifest.xml:8:9-14:19
+112            android:name="com.google.mlkit.common.internal.MlKitComponentDiscoveryService"
+112-->[com.google.mlkit:image-labeling:17.0.9] C:\Users\Hariom\.gradle\caches\8.10\transforms\e5aa530c8047df2c0ec75708d27d6c78\transformed\jetified-image-labeling-17.0.9\AndroidManifest.xml:9:13-91
+113            android:directBootAware="true"
+113-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:17:13-43
+114            android:exported="false" >
+114-->[com.google.mlkit:image-labeling:17.0.9] C:\Users\Hariom\.gradle\caches\8.10\transforms\e5aa530c8047df2c0ec75708d27d6c78\transformed\jetified-image-labeling-17.0.9\AndroidManifest.xml:10:13-37
+115            <meta-data
+115-->[com.google.mlkit:image-labeling:17.0.9] C:\Users\Hariom\.gradle\caches\8.10\transforms\e5aa530c8047df2c0ec75708d27d6c78\transformed\jetified-image-labeling-17.0.9\AndroidManifest.xml:11:13-13:85
+116                android:name="com.google.firebase.components:com.google.mlkit.vision.label.defaults.internal.BundledLabelRegistrar"
+116-->[com.google.mlkit:image-labeling:17.0.9] C:\Users\Hariom\.gradle\caches\8.10\transforms\e5aa530c8047df2c0ec75708d27d6c78\transformed\jetified-image-labeling-17.0.9\AndroidManifest.xml:12:17-132
+117                android:value="com.google.firebase.components.ComponentRegistrar" />
+117-->[com.google.mlkit:image-labeling:17.0.9] C:\Users\Hariom\.gradle\caches\8.10\transforms\e5aa530c8047df2c0ec75708d27d6c78\transformed\jetified-image-labeling-17.0.9\AndroidManifest.xml:13:17-82
+118            <meta-data
+118-->[com.google.mlkit:vision-internal-vkp:18.2.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\876907d6b9c9544da0680609272a5a0a\transformed\jetified-vision-internal-vkp-18.2.3\AndroidManifest.xml:14:13-16:85
+119                android:name="com.google.firebase.components:com.google.mlkit.vision.vkp.VkpRegistrar"
+119-->[com.google.mlkit:vision-internal-vkp:18.2.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\876907d6b9c9544da0680609272a5a0a\transformed\jetified-vision-internal-vkp-18.2.3\AndroidManifest.xml:15:17-103
+120                android:value="com.google.firebase.components.ComponentRegistrar" />
+120-->[com.google.mlkit:vision-internal-vkp:18.2.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\876907d6b9c9544da0680609272a5a0a\transformed\jetified-vision-internal-vkp-18.2.3\AndroidManifest.xml:16:17-82
+121            <meta-data
+121-->[com.google.mlkit:vision-common:17.3.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\a32bd7686eac4582977d9a3b773a11fb\transformed\jetified-vision-common-17.3.0\AndroidManifest.xml:12:13-14:85
+122                android:name="com.google.firebase.components:com.google.mlkit.vision.common.internal.VisionCommonRegistrar"
+122-->[com.google.mlkit:vision-common:17.3.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\a32bd7686eac4582977d9a3b773a11fb\transformed\jetified-vision-common-17.3.0\AndroidManifest.xml:13:17-124
+123                android:value="com.google.firebase.components.ComponentRegistrar" />
+123-->[com.google.mlkit:vision-common:17.3.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\a32bd7686eac4582977d9a3b773a11fb\transformed\jetified-vision-common-17.3.0\AndroidManifest.xml:14:17-82
+124            <meta-data
+124-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:20:13-22:85
+125                android:name="com.google.firebase.components:com.google.mlkit.common.internal.CommonComponentRegistrar"
+125-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:21:17-120
+126                android:value="com.google.firebase.components.ComponentRegistrar" />
+126-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:22:17-82
+127        </service>
+128
+129        <provider
+129-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:9:9-13:38
+130            android:name="com.google.mlkit.common.internal.MlKitInitProvider"
+130-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:10:13-78
+131            android:authorities="com.straycare.app.mlkitinitprovider"
+131-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:11:13-69
+132            android:exported="false"
+132-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:12:13-37
+133            android:initOrder="99" />
+133-->[com.google.mlkit:common:18.11.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\45ec292da2c390d298679d30c46f5059\transformed\jetified-common-18.11.0\AndroidManifest.xml:13:13-35
+134
+135        <activity
+135-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:42:9-50:20
+136            android:name="com.razorpay.CheckoutActivity"
+136-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:43:13-57
+137            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+137-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:44:13-83
+138            android:exported="false"
+138-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:45:13-37
+139            android:theme="@style/CheckoutTheme" >
+139-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:46:13-49
+140            <intent-filter>
+140-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:47:13-49:29
+141                <action android:name="android.intent.action.MAIN" />
+141-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:20:17-69
+141-->C:\Users\Hariom\SC\android-kotlin-app\app\src\main\AndroidManifest.xml:20:25-66
+142            </intent-filter>
+143        </activity>
+144
+145        <provider
+145-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:52:9-63:20
+146            android:name="androidx.startup.InitializationProvider"
+146-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:53:13-67
+147            android:authorities="com.straycare.app.androidx-startup"
+147-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:54:13-68
+148            android:exported="false" >
+148-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:55:13-37
+149            <meta-data
+149-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:57:13-59:52
+150                android:name="com.razorpay.RazorpayInitializer"
+150-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:58:17-64
+151                android:value="androidx.startup" />
+151-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:59:17-49
+152            <meta-data
+152-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:60:13-62:52
+153                android:name="com.razorpay.CoreInitializer"
+153-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:61:17-60
+154                android:value="androidx.startup" />
+154-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:62:17-49
+155            <meta-data
+155-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd7d1a526abb454e88302769e1235289\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+156                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+156-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd7d1a526abb454e88302769e1235289\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:30:17-75
+157                android:value="androidx.startup" />
+157-->[androidx.emoji2:emoji2:1.3.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd7d1a526abb454e88302769e1235289\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:31:17-49
+158            <meta-data
+158-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\9a60a45352bd9b84c6b63e1041087312\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
+159                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+159-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\9a60a45352bd9b84c6b63e1041087312\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
+160                android:value="androidx.startup" />
+160-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\9a60a45352bd9b84c6b63e1041087312\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
+161            <meta-data
+161-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+162                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+162-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+163                android:value="androidx.startup" />
+163-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+164        </provider>
+165
+166        <activity
+166-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:65:9-68:75
+167            android:name="com.razorpay.MagicXActivity"
+167-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:66:13-55
+168            android:exported="false"
+168-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:67:13-37
+169            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+169-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:68:13-72
+170        <activity
+170-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:23:9-27:75
+171            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+171-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:24:13-93
+172            android:excludeFromRecents="true"
+172-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:25:13-46
+173            android:exported="false"
+173-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:26:13-37
+174            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+174-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:27:13-72
+175        <!--
+176            Service handling Google Sign-In user revocation. For apps that do not integrate with
+177            Google Sign-In, this service will never be started.
+178        -->
+179        <service
+179-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:33:9-37:51
+180            android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
+180-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:34:13-89
+181            android:exported="true"
+181-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:35:13-36
+182            android:permission="com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION"
+182-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:36:13-107
+183            android:visibleToInstantApps="true" /> <!-- Needs to be explicitly declared on P+ -->
+183-->[com.google.android.gms:play-services-auth:21.1.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\6e1d6cccf911d1e9f6eeb9a3517f8eea\transformed\jetified-play-services-auth-21.1.0\AndroidManifest.xml:37:13-48
+184        <uses-library
+184-->[com.google.android.gms:play-services-maps:17.0.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\aa34c59ba2b0edbf8cb678adc7d4c69f\transformed\jetified-play-services-maps-17.0.0\AndroidManifest.xml:33:9-35:40
+185            android:name="org.apache.http.legacy"
+185-->[com.google.android.gms:play-services-maps:17.0.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\aa34c59ba2b0edbf8cb678adc7d4c69f\transformed\jetified-play-services-maps-17.0.0\AndroidManifest.xml:34:13-50
+186            android:required="false" />
+186-->[com.google.android.gms:play-services-maps:17.0.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\aa34c59ba2b0edbf8cb678adc7d4c69f\transformed\jetified-play-services-maps-17.0.0\AndroidManifest.xml:35:13-37
+187
+188        <activity
+188-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\edda93610e80a7f3f22dd9220a5d5284\transformed\jetified-play-services-base-18.5.0\AndroidManifest.xml:5:9-173
+189            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+189-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\edda93610e80a7f3f22dd9220a5d5284\transformed\jetified-play-services-base-18.5.0\AndroidManifest.xml:5:19-85
+190            android:exported="false"
+190-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\edda93610e80a7f3f22dd9220a5d5284\transformed\jetified-play-services-base-18.5.0\AndroidManifest.xml:5:146-170
+191            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+191-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\edda93610e80a7f3f22dd9220a5d5284\transformed\jetified-play-services-base-18.5.0\AndroidManifest.xml:5:86-145
+192
+193        <meta-data
+193-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\0f47ae918bd1fe315b944b99952574f8\transformed\jetified-play-services-basement-18.4.0\AndroidManifest.xml:6:9-122
+194            android:name="com.google.android.gms.version"
+194-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\0f47ae918bd1fe315b944b99952574f8\transformed\jetified-play-services-basement-18.4.0\AndroidManifest.xml:6:20-65
+195            android:value="@integer/google_play_services_version" />
+195-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\Hariom\.gradle\caches\8.10\transforms\0f47ae918bd1fe315b944b99952574f8\transformed\jetified-play-services-basement-18.4.0\AndroidManifest.xml:6:66-119
+196
+197        <service
+197-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\3c9c33485b321de8886bd6820d701a4b\transformed\jetified-transport-backend-cct-2.3.3\AndroidManifest.xml:29:9-35:19
+198            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+198-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\3c9c33485b321de8886bd6820d701a4b\transformed\jetified-transport-backend-cct-2.3.3\AndroidManifest.xml:30:13-103
+199            android:exported="false" >
+199-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\3c9c33485b321de8886bd6820d701a4b\transformed\jetified-transport-backend-cct-2.3.3\AndroidManifest.xml:31:13-37
+200            <meta-data
+200-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\3c9c33485b321de8886bd6820d701a4b\transformed\jetified-transport-backend-cct-2.3.3\AndroidManifest.xml:32:13-34:39
+201                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+201-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\3c9c33485b321de8886bd6820d701a4b\transformed\jetified-transport-backend-cct-2.3.3\AndroidManifest.xml:33:17-94
+202                android:value="cct" />
+202-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\Hariom\.gradle\caches\8.10\transforms\3c9c33485b321de8886bd6820d701a4b\transformed\jetified-transport-backend-cct-2.3.3\AndroidManifest.xml:34:17-36
+203        </service>
+204        <service
+204-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\Hariom\.gradle\caches\8.10\transforms\f2db7eaeb319aa90cf86cc9b2c397502\transformed\jetified-transport-runtime-2.2.6\AndroidManifest.xml:26:9-30:19
+205            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+205-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\Hariom\.gradle\caches\8.10\transforms\f2db7eaeb319aa90cf86cc9b2c397502\transformed\jetified-transport-runtime-2.2.6\AndroidManifest.xml:27:13-117
+206            android:exported="false"
+206-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\Hariom\.gradle\caches\8.10\transforms\f2db7eaeb319aa90cf86cc9b2c397502\transformed\jetified-transport-runtime-2.2.6\AndroidManifest.xml:28:13-37
+207            android:permission="android.permission.BIND_JOB_SERVICE" >
+207-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\Hariom\.gradle\caches\8.10\transforms\f2db7eaeb319aa90cf86cc9b2c397502\transformed\jetified-transport-runtime-2.2.6\AndroidManifest.xml:29:13-69
+208        </service>
+209
+210        <receiver
+210-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\Hariom\.gradle\caches\8.10\transforms\f2db7eaeb319aa90cf86cc9b2c397502\transformed\jetified-transport-runtime-2.2.6\AndroidManifest.xml:32:9-34:40
+211            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+211-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\Hariom\.gradle\caches\8.10\transforms\f2db7eaeb319aa90cf86cc9b2c397502\transformed\jetified-transport-runtime-2.2.6\AndroidManifest.xml:33:13-132
+212            android:exported="false" />
+212-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\Hariom\.gradle\caches\8.10\transforms\f2db7eaeb319aa90cf86cc9b2c397502\transformed\jetified-transport-runtime-2.2.6\AndroidManifest.xml:34:13-37
+213        <receiver
+213-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+214            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+214-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+215            android:directBootAware="false"
+215-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+216            android:enabled="true"
+216-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+217            android:exported="true"
+217-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+218            android:permission="android.permission.DUMP" >
+218-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+219            <intent-filter>
+219-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+220                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+220-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+220-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+221            </intent-filter>
+222            <intent-filter>
+222-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+223                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+223-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+223-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+224            </intent-filter>
+225            <intent-filter>
+225-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+226                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+226-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+226-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+227            </intent-filter>
+228            <intent-filter>
+228-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+229                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+229-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+229-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\Hariom\.gradle\caches\8.10\transforms\3ecfec79f629d530b4117709db02a12b\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
+230            </intent-filter>
+231        </receiver>
+232
+233        <activity
+233-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:13:9-27:20
+234            android:name="com.razorpay.DeeplinkActivity"
+234-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:14:13-57
+235            android:exported="true"
+235-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:15:13-36
+236            android:theme="@style/CheckoutTheme" >
+236-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:16:13-49
+237            <intent-filter>
+237-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:17:13-26:29
+238                <action android:name="android.intent.action.VIEW" />
+238-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:12:13-65
+238-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:12:21-62
+239
+240                <category android:name="android.intent.category.DEFAULT" />
+240-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:20:17-76
+240-->[com.razorpay:core:1.0.15] C:\Users\Hariom\.gradle\caches\8.10\transforms\94b163d715a9211743beead9b6bb7ba2\transformed\jetified-core-1.0.15\AndroidManifest.xml:20:27-73
+241                <category android:name="android.intent.category.BROWSABLE" />
+241-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:21:13-74
+241-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:21:23-71
+242
+243                <data
+243-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:14:13-16:38
+244                    android:host="com.straycare.app"
+245                    android:scheme="razorpay" />
+245-->[com.razorpay:standard-core:1.7.14] C:\Users\Hariom\.gradle\caches\8.10\transforms\fd4788d99fc20f654e10e785a0769862\transformed\jetified-standard-core-1.7.14\AndroidManifest.xml:16:17-35
+246            </intent-filter>
+247        </activity>
+248    </application>
+249
+250</manifest>

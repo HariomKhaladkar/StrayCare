@@ -3,6 +3,8 @@ import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import API_BASE_URL from '../api';
+
 
 const StarDisplay = ({ rating }) => (
     <div className="flex">
@@ -23,7 +25,7 @@ const AdminFeedbackView = () => {
         setLoading(true);
         const token = localStorage.getItem('token'); // Admin uses the standard user token
         try {
-            const response = await axios.get('http://127.0.0.1:8000/admin/feedback', {
+            const response = await axios.get(`${API_BASE_URL}/admin/feedback`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setFeedbackList(response.data);

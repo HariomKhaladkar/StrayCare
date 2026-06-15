@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import styles from './Auth.module.css';
 
 export default function Register() {
@@ -21,6 +22,29 @@ export default function Register() {
             navigate('/login'); // Redirect to login after successful registration
         } catch (err) {
             setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setIsLoading(true);
+        setError('');
+        try {
+            const response = await axios.post('/auth/google', {
+                credential: credentialResponse.credential
+            });
+            localStorage.setItem('token', response.data.access_token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+
+            if (response.data.user.is_admin) {
+                navigate('/admin/dashboard');
+            } else {
+                navigate('/my-reports');
+            }
+            window.location.reload();
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Google Login failed.');
         } finally {
             setIsLoading(false);
         }
@@ -50,6 +74,16 @@ export default function Register() {
                         {isLoading ? "Registering..." : "Register"}
                     </button>
                 </form>
+                <div className={styles.divider}>
+                    <span>or</span>
+                </div>
+                <div className={styles.googleContainer}>
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => setError('Google Sign In failed')}
+                        theme="filled_black"
+                    />
+                </div>
                 {error && <p className={styles.errorMessage}>{error}</p>}
                 <p className={styles.footerText}>
                     Already have an account? <Link to="/login" className={styles.link}>Log In</Link>

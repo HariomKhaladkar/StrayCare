@@ -4,10 +4,10 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import axios from "axios";
+import axios from 'axios';
+import API_BASE_URL from './api';
 
-//axios.defaults.baseURL = "https://straycare-backend.onrender.com"; 
-axios.defaults.baseURL = "http://127.0.0.1:8000";
+axios.defaults.baseURL = API_BASE_URL;
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

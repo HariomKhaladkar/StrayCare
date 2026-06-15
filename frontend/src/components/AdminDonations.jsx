@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import styles from './Admin.module.css'; // Reusing Admin styles
+import styles from './Admin.module.css';
+import API_BASE_URL from '../api';
 
 const AdminDonations = () => {
     const [transactions, setTransactions] = useState([]);
@@ -16,7 +17,7 @@ const AdminDonations = () => {
             return;
         }
         try {
-            const response = await axios.get('http://127.0.0.1:8000/admin/transactions', {
+            const response = await axios.get(`${API_BASE_URL}/admin/transactions`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTransactions(response.data);

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">StrayCare</string>
+    <string name="title_activity_main">StrayCare</string>
+    <string name="package_name">com.straycare.app</string>
+    <string name="custom_url_scheme">com.straycare.app</string>
+</resources>

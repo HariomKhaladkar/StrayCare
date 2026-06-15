@@ -1,6 +1,8 @@
 // frontend/src/components/AdoptionRequests.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../api';
+
 
 // --- (RequestDetailModal component remains the same) ---
 const RequestDetailModal = ({ request, onClose }) => {
@@ -53,7 +55,7 @@ const AdoptionRequests = () => {
         }
 
         try {
-            const response = await axios.get('http://127.0.0.1:8000/ngo/me/adoption-requests', {
+            const response = await axios.get(`${API_BASE_URL}/ngo/me/adoption-requests`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setRequests(response.data);
@@ -76,7 +78,7 @@ const AdoptionRequests = () => {
         const token = localStorage.getItem('ngo_token');
         try {
             await axios.put(
-                `http://127.0.0.1:8000/ngo/adoption-requests/${requestId}/status`,
+                `${API_BASE_URL}/ngo/adoption-requests/${requestId}/status`,
                 { status: newStatus }, // Send status in the request body
                 { headers: { Authorization: `Bearer ${token}` } }
             );

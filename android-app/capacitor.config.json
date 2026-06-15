@@ -1,0 +1,26 @@
+{
+  "appId": "com.straycare.app",
+  "appName": "StrayCare",
+  "webDir": "../frontend/build",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "http"
+  },
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "Camera": {
+      "saveToGallery": false,
+      "allowEditing": false,
+      "quality": 90,
+      "width": 1280,
+      "height": 1280,
+      "correctOrientation": true,
+      "promptLabelHeader": "Report a Stray Animal",
+      "promptLabelPhoto": "Choose from Gallery",
+      "promptLabelPicture": "Take a Photo",
+      "promptLabelCancel": "Cancel"
+    }
+  }
+}

@@ -111,6 +111,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object NgoDashboard: Screen("ngo_dashboard","Cases",   Icons.Filled.Home)
     object Donate      : Screen("donate",       "Donate",  Icons.Filled.Favorite)
     object Recovery    : Screen("recovery_stories", "Stories", Icons.Filled.Home)
+    object FirstAid    : Screen("first_aid",    "First Aid", Icons.Filled.Home)
 }
 
 private val CITIZEN_TABS = listOf(
@@ -123,7 +124,8 @@ private val NO_BOTTOM_BAR_ROUTES = setOf(
     "login", "ngo_login", "admin_dashboard",
     Screen.NgoDashboard.route,
     "chatbot", "case_detail/{caseId}", "pet_detail/{petId}",
-    Screen.Donate.route, Screen.Recovery.route
+    Screen.Donate.route, Screen.Recovery.route,
+    Screen.FirstAid.route, "first_aid_detail/{articleId}"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -209,6 +211,7 @@ fun StrayCareApp() {
                     onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                     onNavigateToDonate = { navController.navigate(Screen.Donate.route) },
                     onNavigateToRecovery = { navController.navigate(Screen.Recovery.route) },
+                    onNavigateToFirstAid = { navController.navigate(Screen.FirstAid.route) },
                     onNavigateToCaseDetail = { id -> navController.navigate("case_detail/$id") }
                 )
             }
@@ -247,6 +250,19 @@ fun StrayCareApp() {
             }
             composable(Screen.Recovery.route) {
                 com.straycare.app.ui.recovery.RecoveryStoriesScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.FirstAid.route) {
+                com.straycare.app.ui.firstaid.FirstAidScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToDetail = { id -> navController.navigate("first_aid_detail/$id") }
+                )
+            }
+            composable("first_aid_detail/{articleId}") { backStackEntry ->
+                val articleId = backStackEntry.arguments?.getString("articleId")?.toIntOrNull() ?: return@composable
+                com.straycare.app.ui.firstaid.FirstAidDetailScreen(
+                    articleId = articleId,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

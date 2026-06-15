@@ -1,41 +1,188 @@
 /* frontend/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import 'leaflet/dist/leaflet.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ---- Custom Keyframes ---- */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatUp {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-14px); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes pulseGlow {
+  0%,100% { box-shadow: 0 0 18px rgba(99,102,241,0.35); }
+  50%     { box-shadow: 0 0 42px rgba(139,92,246,0.80); }
+}
+@keyframes particleFloat {
+  0%,100% { transform: translateY(0)   translateX(0)   scale(1); opacity: 0.6; }
+  33%     { transform: translateY(-30px) translateX(18px) scale(1.1); opacity: 1; }
+  66%     { transform: translateY(-15px) translateX(-12px) scale(0.9); opacity: 0.8; }
+}
+@keyframes gradientShift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+@keyframes borderGlow {
+  0%,100% { border-color: rgba(99,102,241,0.5); }
+  50%     { border-color: rgba(236,72,153,0.8); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 @layer base {
   body {
-    @apply font-sans text-gray-700 antialiased;
+    font-family: 'Inter', 'Poppins', sans-serif;
+    @apply text-gray-700 antialiased;
+    background: #0f0f1a;
   }
 }
 
 @layer components {
+
+  /* ── Glass Card ── */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  }
+
+  .glass-card-light {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 32px rgba(99,102,241,0.12);
+  }
+
+  /* ── Gradient Text ── */
+  .gradient-text {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-warm {
+    background: linear-gradient(135deg, #f97316, #f59e0b, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Gradient Button ── */
+  .gradient-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    background-size: 200% auto;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: shimmer 2.5s linear infinite;
+  }
+  .gradient-btn:hover {
+    background-position: right center;
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(139,92,246,0.45);
+  }
+
+  .gradient-btn-warm {
+    background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
+    background-size: 200% auto;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .gradient-btn-warm:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(249,115,22,0.45);
+  }
+
+  /* ── Feature Card ── */
   .feature-card {
-    @apply bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300;
+    @apply glass-card-light p-8 transition-all duration-300;
+    animation: borderGlow 3s ease-in-out infinite;
   }
-  
+  .feature-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 24px 64px rgba(99,102,241,0.25);
+  }
+
+  /* ── Form Inputs ── */
   .form-input {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 0.625rem;
+    color: #e2e8f0;
+    transition: all 0.25s;
+    outline: none;
+    font-size: 0.95rem;
+  }
+  .form-input::placeholder { color: rgba(255,255,255,0.4); }
+  .form-input:focus {
+    border-color: #8b5cf6;
+    background: rgba(255,255,255,0.11);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.3);
   }
 
-  /* --- ADD THIS NEW BUTTON STYLING SYSTEM --- */
+  /* ── Standard Buttons ── */
   .btn {
-    @apply w-full font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply w-full font-bold py-3 px-4 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
-
   .btn-primary {
     @apply bg-primary text-white hover:bg-secondary focus:ring-primary;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(99,102,241,0.5); }
+  .btn-secondary { @apply bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400; }
+  .btn-success   { @apply bg-teal   text-white hover:bg-teal/80  focus:ring-teal; }
+  .btn-danger    { @apply bg-rose   text-white hover:bg-rose/80  focus:ring-rose; }
+
+  /* ── Shimmer Loader ── */
+  .shimmer-loader {
+    background: linear-gradient(90deg, #1e1e2e 25%, #2d2d44 50%, #1e1e2e 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.5rem;
   }
 
-  .btn-secondary {
-    @apply bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400;
+  /* ── Stat Counter Card ── */
+  .stat-card {
+    @apply glass-card text-center p-6;
+    animation: countUp 0.6s ease both;
   }
-  
-  .btn-success {
-    @apply bg-green-500 text-white hover:bg-green-600 focus:ring-green-500;
-  }
-  
-  .btn-danger {
-      @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-500;
+  .stat-card:hover { transform: scale(1.05); }
+
+  /* ── Animated Glow Ring ── */
+  .glow-ring {
+    animation: pulseGlow 2s ease-in-out infinite;
+    border-radius: 9999px;
   }
 }

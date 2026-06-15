@@ -1,0 +1,14 @@
+flowchart TD
+    Start(["🟢 Start"]) --> A["NGO Adds Pet Listing\nwith photo and video"]
+    A --> B["Pet Status = Available"]
+    B --> C{"Adopter Action"}
+    C -->|"Browse Manually"| D["View Pet Gallery"]
+    C -->|"Use AI Matchmaker"| E["Submit Lifestyle Profile\nliving_space, activity, has_kids"]
+    E --> F["Algorithm Ranks Pets\nby Match Percentage"]
+    F --> D
+    D --> G["Submit Adoption Request\nname, phone, reason, experience"]
+    G --> H["NGO Reviews Request"]
+    H -->|Approve| I["Pet Status = Adopted\nRequest = Approved"]
+    H -->|Reject| J["Request = Rejected"]
+    I --> End(["🔴 End"])
+    J --> End

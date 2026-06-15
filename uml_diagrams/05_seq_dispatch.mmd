@@ -1,0 +1,21 @@
+sequenceDiagram
+    actor Admin
+    participant Frontend
+    participant FastAPI
+    participant Algorithm
+    participant Database
+
+    Admin->>Frontend: Open Smart Dispatch page
+    Frontend->>FastAPI: GET /admin/cases/pending
+    FastAPI->>Database: Query pending cases
+    Database-->>FastAPI: List of cases with coordinates
+    FastAPI-->>Frontend: Cases list
+    Admin->>Frontend: Select a case
+    Frontend->>FastAPI: GET /admin/dispatch?case_id=X
+    FastAPI->>Database: Get all verified NGOs
+    FastAPI->>Database: Get active case counts per NGO
+    FastAPI->>Algorithm: rank_ngos_for_case(lat, lon, ngos, counts)
+    Note over Algorithm: Haversine distance score (50pts) + Caseload score (30pts) + Base (20pts)
+    Algorithm-->>FastAPI: Ranked NGO list with scores
+    FastAPI-->>Frontend: NGO rankings
+    Frontend-->>Admin: Display ranked recommendations

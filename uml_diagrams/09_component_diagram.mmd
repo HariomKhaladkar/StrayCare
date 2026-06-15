@@ -1,0 +1,36 @@
+flowchart TB
+    subgraph Client["Client Layer"]
+        RN["React.js SPA\nPort 3000"]
+        AN["Android App\nCapacitor"]
+    end
+
+    subgraph Backend["FastAPI Backend - Port 8000"]
+        Auth["Auth Module\nJWT + Google OAuth"]
+        Cases["Cases Module\nNLP Severity Triaging"]
+        Pets["Pets and Adoption Module\nAI Matchmaker"]
+        Donations["Donations Module\nRazorpay Integration"]
+        Feedback["Feedback Module"]
+        Analytics["Analytics Module\nK-Means + Haversine"]
+        Chatbot["AI Chatbot\nGroq Llama 3.3 70B"]
+        FirstAid["First Aid Articles"]
+    end
+
+    subgraph Storage["Storage Layer"]
+        SQLite[("SQLite DB\nlocal.db")]
+        FS["File System\n/uploads"]
+    end
+
+    subgraph External["External Services"]
+        Google["Google OAuth2\nAuth Server"]
+        Razorpay["Razorpay\nPayment Gateway"]
+        Groq["Groq API\nLlama 3.3 70B"]
+    end
+
+    RN <-->|"REST API + JWT"| Backend
+    AN <-->|"REST API + JWT"| Backend
+    Backend --> SQLite
+    Cases --> FS
+    Pets --> FS
+    Auth <--> Google
+    Donations <--> Razorpay
+    Chatbot <--> Groq

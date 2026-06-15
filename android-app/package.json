@@ -1,0 +1,18 @@
+{
+  "name": "straycare-android",
+  "version": "1.0.0",
+  "description": "StrayCare Android App (Capacitor wrapper of the React web app)",
+  "scripts": {
+    "build:web": "cd ../frontend && npm run build",
+    "sync": "npx cap sync",
+    "open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/camera": "^6.0.2",
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}

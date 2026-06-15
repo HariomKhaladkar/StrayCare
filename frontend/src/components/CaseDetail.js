@@ -1,12 +1,26 @@
 // src/components/CaseDetail.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import API_BASE_URL from '../api';
+
+import { useParams, Link } from 'react-router-dom';
 import LeaveFeedbackModal from './LeaveFeedbackModal';
 import styles from './CaseDetail.module.css'; // <-- 1. IMPORT THE MODAL
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix default Leaflet icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 
 // --- Helper Functions ---
 const formatDateTime = (isoString) => new Date(isoString).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22300%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20width%3D%22400%22%20height%3D%22300%22%20fill%3D%22%232a2a40%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23ffffff55%22%3ENo%20Image%20Available%3C%2Ftext%3E%3C%2Fsvg%3E';
 
 // --- Update Modal Component (Restyled with Tailwind) ---
 const UpdateModal = ({ caseId, onClose, onUpdateSuccess }) => {
@@ -26,7 +40,7 @@ const UpdateModal = ({ caseId, onClose, onUpdateSuccess }) => {
         }
         const token = localStorage.getItem('ngo_token');
         try {
-            await axios.post(`http://127.0.0.1:8000/cases/${caseId}/updates`, formData, {
+            await axios.post(`${API_BASE_URL}/cases/${caseId}/updates`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             });
             onUpdateSuccess();
@@ -81,7 +95,7 @@ const CaseDetail = () => {
     const fetchCaseDetails = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/cases/${id}`);
+            const response = await axios.get(`${API_BASE_URL}/cases/${id}`);
             setCaseDetails(response.data);
             setError('');
         } catch (err) {
@@ -128,7 +142,15 @@ const CaseDetail = () => {
             <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg grid md:grid-cols-2 gap-8">
                 {/* Left Column: Image */}
                 <div>
-                    <img src={`http://127.0.0.1:8000/${caseDetails.photo_url}`} alt="Reported Animal" className="rounded-lg w-full shadow-md" />
+                    <img 
+                        src={caseDetails.photo_url ? `${API_BASE_URL}/${caseDetails.photo_url}` : PLACEHOLDER_IMAGE} 
+                        alt="Reported Animal" 
+                        className="rounded-lg w-full shadow-md" 
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = PLACEHOLDER_IMAGE;
+                        }}
+                    />
                 </div>
 
                 {/* Right Column: Details & Timeline */}
@@ -143,6 +165,28 @@ const CaseDetail = () => {
                         </span>
                     </div>
                     <p className="mt-4 text-gray-700 text-lg">{caseDetails.description}</p>
+                    
+                    {caseDetails.latitude && caseDetails.longitude && (
+                        <div className="mt-6">
+                            <h3 className="text-xl font-semibold mb-2">Location</h3>
+                            <div style={{ height: '250px', width: '100%', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                                <MapContainer 
+                                    center={[caseDetails.latitude, caseDetails.longitude]} 
+                                    zoom={15} 
+                                    style={{ height: '100%', width: '100%' }}
+                                    scrollWheelZoom={false}
+                                >
+                                    <TileLayer
+                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    />
+                                    <Marker position={[caseDetails.latitude, caseDetails.longitude]}>
+                                        <Popup>Case #{caseDetails.id} Location</Popup>
+                                    </Marker>
+                                </MapContainer>
+                            </div>
+                        </div>
+                    )}
                     
                     {/* --- 4. ADD THE FEEDBACK BUTTON IN THE CORRECT LOCATION --- */}
                     {showFeedbackButton && (
@@ -169,7 +213,7 @@ const CaseDetail = () => {
                                         <div className="absolute -left-2 top-1 w-4 h-4 bg-primary rounded-full"></div>
                                         <p className="font-semibold text-gray-800">{formatDateTime(update.created_at)}</p>
                                         <p className="text-gray-600">{update.notes}</p>
-                                        {update.photo_url && <img src={`http://127.0.0.1:8000/${update.photo_url}`} alt="Update" className="mt-2 rounded-md shadow-sm max-w-xs"/>}
+                                        {update.photo_url && <img src={`${API_BASE_URL}/${update.photo_url}`} alt="Update" className="mt-2 rounded-md shadow-sm max-w-xs" onError={(e) => { e.target.onerror = null; e.target.src = PLACEHOLDER_IMAGE; }}/>}
                                     </div>
                                 ))}
                             </div>

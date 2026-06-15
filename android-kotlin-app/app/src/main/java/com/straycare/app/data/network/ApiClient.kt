@@ -9,8 +9,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
     // ✅ PRODUCTION: Railway deployment URL
-    // 🔁 Replace this with your actual Railway URL after deploying
-    const val BASE_URL = "https://straycare-backend.up.railway.app/"
+    const val BASE_URL = "https://straycare-production.up.railway.app/"
 
     // 🔧 LOCAL DEV (uncomment to test locally, comment out above):
     // const val BASE_URL = "http://10.0.2.2:8000/"  // Android emulator → localhost

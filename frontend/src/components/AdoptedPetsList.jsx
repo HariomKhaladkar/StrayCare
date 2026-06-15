@@ -1,11 +1,13 @@
 // frontend/src/components/AdoptedPetsList.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../api';
+
 
 const AdoptedPetCard = ({ pet }) => (
     <div className="bg-white rounded-lg shadow-md overflow-hidden flex">
         <img 
-            src={pet.image_url.startsWith('http') ? pet.image_url : `http://127.0.0.1:8000/${pet.image_url}`} 
+            src={pet.image_url.startsWith('http') ? pet.image_url : `${API_BASE_URL}/${pet.image_url}`} 
             alt={pet.name}
             className="w-32 h-32 object-cover"
         />
@@ -28,7 +30,7 @@ const AdoptedPetsList = () => {
         setLoading(true);
         const token = localStorage.getItem('ngo_token');
         try {
-            const response = await axios.get('http://127.0.0.1:8000/ngo/me/adopted-pets', {
+            const response = await axios.get(`${API_BASE_URL}/ngo/me/adopted-pets`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPets(response.data);

@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import styles from './MyAcceptedCases.module.css'; // We'll create this next
+import styles from './MyAcceptedCases.module.css';
+import API_BASE_URL from '../api';
+
 
 const MyAcceptedCases = () => {
     const [acceptedCases, setAcceptedCases] = useState([]);
@@ -45,7 +47,7 @@ const MyAcceptedCases = () => {
                 {acceptedCases.length > 0 ? (
                     acceptedCases.map(caseItem => (
                         <div key={caseItem.id} className={styles.caseCard}>
-                             <img src={`http://127.0.0.1:8000/${caseItem.photo_url}`} alt="Reported Animal"/>
+                             <img src={`${API_BASE_URL}/${caseItem.photo_url}`} alt="Reported Animal"/>
                              <div className={styles.cardContent}>
                                 <h3>Case #{caseItem.id}</h3>
                                 <p>{caseItem.description.substring(0, 100)}...</p>

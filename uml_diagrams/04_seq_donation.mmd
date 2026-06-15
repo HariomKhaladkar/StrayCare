@@ -1,0 +1,22 @@
+sequenceDiagram
+    actor Donor
+    participant Frontend
+    participant FastAPI
+    participant Razorpay
+    participant Database
+
+    Donor->>Frontend: Select NGO and amount
+    Frontend->>FastAPI: POST /donations/create-order
+    FastAPI->>Razorpay: Create Order via SDK
+    Razorpay-->>FastAPI: order_id + amount
+    FastAPI->>Database: INSERT Donation (status=Pending)
+    FastAPI-->>Frontend: order_id + key_id
+    Frontend->>Razorpay: Open Checkout Widget
+    Donor->>Razorpay: Complete Payment (UPI/Card)
+    Razorpay-->>Frontend: payment_id + signature
+    Frontend->>FastAPI: POST /donations/verify-payment
+    FastAPI->>Razorpay: Verify HMAC-SHA256 signature
+    Razorpay-->>FastAPI: Valid
+    FastAPI->>Database: UPDATE Donation status=Success
+    FastAPI-->>Frontend: Payment verified
+    Frontend-->>Donor: Thank you! Donation Successful

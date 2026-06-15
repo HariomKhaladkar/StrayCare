@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>StrayCare – Technical Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e1a;--surface:#111827;--card:#161d2e;--border:#1e2d45;
+  --accent:#3b82f6;--accent2:#8b5cf6;--accent3:#10b981;--accent4:#f59e0b;--accent5:#ef4444;
+  --text:#e2e8f0;--muted:#64748b;--white:#fff;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;}
+.page{max-width:1100px;margin:0 auto;padding:32px 24px;}
+
+/* HEADER */
+.header{text-align:center;padding:36px 0 28px;position:relative;}
+.header::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:600px;height:200px;background:radial-gradient(ellipse,rgba(59,130,246,.18) 0%,transparent 70%);pointer-events:none;}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.12);
+  border:1px solid rgba(59,130,246,.3);border-radius:20px;padding:4px 14px;font-size:11px;
+  color:var(--accent);font-weight:600;letter-spacing:.5px;margin-bottom:14px;}
+.header h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,#fff 30%,#93c5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+.header p{color:var(--muted);font-size:13px;max-width:560px;margin:0 auto;}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:28px 0;}
+
+/* SECTION TITLES */
+.sec-title{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:700;
+  letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.sec-title::before{content:'';flex:1;height:1px;background:var(--border);}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* GRID LAYOUTS */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;
+  transition:border-color .2s;}
+.card:hover{border-color:rgba(59,130,246,.4);}
+.card-icon{font-size:22px;margin-bottom:8px;}
+.card-label{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;}
+.card-value{font-size:14px;font-weight:600;color:var(--white);}
+.card-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* TECH STACK */
+.tech-item{display:flex;align-items:flex-start;gap:10px;background:var(--card);
+  border:1px solid var(--border);border-radius:10px;padding:13px 14px;}
+.tech-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.tech-name{font-size:12px;font-weight:700;color:var(--white);margin-bottom:2px;}
+.tech-desc{font-size:11px;color:var(--muted);}
+
+/* FEATURE CARDS */
+.feat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px;
+  position:relative;overflow:hidden;}
+.feat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.feat.c1::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.feat.c2::before{background:linear-gradient(90deg,var(--accent3),var(--accent));}
+.feat.c3::before{background:linear-gradient(90deg,var(--accent4),var(--accent5));}
+.feat.c4::before{background:linear-gradient(90deg,var(--accent2),var(--accent3));}
+.feat.c5::before{background:linear-gradient(90deg,var(--accent5),var(--accent4));}
+.feat.c6::before{background:linear-gradient(90deg,var(--accent),var(--accent3));}
+.feat-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.feat-icon{font-size:18px;}
+.feat-title{font-size:12px;font-weight:700;color:var(--white);}
+.feat-body{font-size:11px;color:var(--muted);line-height:1.65;}
+.tag{display:inline-block;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);
+  border-radius:4px;padding:1px 7px;font-size:10px;color:var(--accent);margin:2px 2px 0 0;}
+.tag.g{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.2);color:var(--accent3);}
+.tag.y{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.2);color:var(--accent4);}
+.tag.r{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.2);color:var(--accent5);}
+.tag.p{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.2);color:var(--accent2);}
+
+/* API TABLE */
+.api-table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+.api-table th{background:rgba(255,255,255,.03);padding:8px 12px;text-align:left;
+  font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);}
+.api-table td{padding:8px 12px;font-size:11px;border-bottom:1px solid rgba(255,255,255,.04);}
+.api-table tr:hover td{background:rgba(255,255,255,.02);}
+.method{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;}
+.get{background:rgba(16,185,129,.15);color:#34d399;}
+.post{background:rgba(59,130,246,.15);color:#60a5fa;}
+.put{background:rgba(245,158,11,.15);color:#fbbf24;}
+.del{background:rgba(239,68,68,.15);color:#f87171;}
+
+/* ROLE TABLE */
+.role-row{display:grid;grid-template-columns:120px repeat(5,1fr);gap:0;
+  border-bottom:1px solid var(--border);}
+.role-row.head{background:rgba(255,255,255,.03);}
+.role-cell{padding:9px 12px;font-size:11px;display:flex;align-items:center;}
+.role-row.head .role-cell{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;}
+.check{color:var(--accent3);}
+.cross{color:var(--muted);}
+
+/* DB TABLE */
+.db-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.db-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px;}
+.db-name{font-size:11px;font-weight:700;color:var(--white);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.db-col{font-size:10px;color:var(--muted);padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.db-col:last-child{border:none;}
+
+/* FOOTER */
+.footer{text-align:center;padding:20px 0 8px;color:var(--muted);font-size:11px;}
+.footer span{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="badge">📋 Technical Specification Draft</div>
+  <h1>StrayCare Platform</h1>
+  <p>AI-Powered Stray Animal Welfare System — Technical Details &amp; System Usability Overview</p>
+</div>
+
+<!-- TECH STACK -->
+<div class="sec-title">Technology Stack</div>
+<div class="grid-4">
+  <div class="tech-item">
+    <div class="tech-dot" style="background:#3b82f6"></div>
+    <div><div class="tech-name">FastAPI (Python)</div><div class="tech-desc">RESTful backend API with OAuth2, async routes, automatic Swagger docs</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-dot" style="background:#61dafb"></div>
+    <div><div class="tech-name">React.js</div><div class="tech-desc">Component-based SPA frontend with CSS Modules, React Router, hooks</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-dot" style="background:#10b981"></div>
+    <div><div class="tech-name">SQLite + SQLAlchemy</div><div class="tech-desc">Relational DB with ORM, auto-migration on startup, relationship mapping</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-dot" style="background:#f59e0b"></div>
+    <div><div class="tech-name">JWT Authentication</div><div class="tech-desc">Scoped Bearer tokens (user / ngo), bcrypt password hashing via passlib</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-dot" style="background:#8b5cf6"></div>
+    <div><div class="tech-name">Groq API (LLaMA 3.3 70B)</div><div class="tech-desc">AI chatbot with multi-turn context, domain-scoped system prompt</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-dot" style="background:#ef4444"></div>
+    <div><div class="tech-name">TensorFlow.js + MobileNet</div><div class="tech-desc">In-browser animal recognition, offline-capable, ImageNet-1000 classes</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-dot" style="background:#06b6d4"></div>
+    <div><div class="tech-name">Razorpay Payment Gateway</div><div class="tech-desc">Order creation, webhook verification, NGO-linked donation flow</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-dot" style="background:#4285f4"></div>
+    <div><div class="tech-name">Google OAuth 2.0</div><div class="tech-desc">One-tap citizen login via Google ID token verification server-side</div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- KEY FEATURES -->
+<div class="sec-title">Core System Features</div>
+<div class="grid-3">
+  <div class="feat c1">
+    <div class="feat-head"><span class="feat-icon">🗺️</span><span class="feat-title">Smart NGO Dispatch</span></div>
+    <div class="feat-body">Haversine geospatial formula computes real-world distance (km) to each verified NGO. Weighted scoring: Proximity 50pts + Caseload 30pts + Base 20pts. Sorted dispatch list ensures fastest response to animal emergencies.</div>
+    <div style="margin-top:8px"><span class="tag">Haversine</span><span class="tag g">Geospatial</span><span class="tag p">Weighted Score</span></div>
+  </div>
+  <div class="feat c2">
+    <div class="feat-head"><span class="feat-icon">🐾</span><span class="feat-title">AI Pet Matchmaker</span></div>
+    <div class="feat-body">Rule-based compatibility engine scores pets against adopter lifestyle profile (living space, activity level, children). Score range 15–99%. Organic variance prevents ties. Sorted results shown to adopters.</div>
+    <div style="margin-top:8px"><span class="tag g">Rule Engine</span><span class="tag">Profile Matching</span><span class="tag y">Lifestyle Score</span></div>
+  </div>
+  <div class="feat c3">
+    <div class="feat-head"><span class="feat-icon">⚠️</span><span class="feat-title">Case Severity Triaging</span></div>
+    <div class="feat-body">NLP keyword scoring classifies case descriptions into Critical / High / Moderate / Low. Critical keywords score 100pts, High 60pts, Moderate 30pts. NGO case queue sorted by severity-then-date.</div>
+    <div style="margin-top:8px"><span class="tag r">Critical</span><span class="tag y">High/Moderate</span><span class="tag g">Low</span></div>
+  </div>
+  <div class="feat c4">
+    <div class="feat-head"><span class="feat-icon">🔥</span><span class="feat-title">Zone Red Hotspot Map</span></div>
+    <div class="feat-body">Custom K-Means clustering (k=5, max 20 iterations) on GPS coordinates of reported cases. Cluster radius and color mapped to case count: ≥10 Critical (800m), ≥5 High (500m), ≥2 Moderate (300m).</div>
+    <div style="margin-top:8px"><span class="tag r">K-Means</span><span class="tag p">Clustering</span><span class="tag">GPS Heatmap</span></div>
+  </div>
+  <div class="feat c5">
+    <div class="feat-head"><span class="feat-icon">🤖</span><span class="feat-title">AI Animal Recognition</span></div>
+    <div class="feat-body">TensorFlow.js MobileNetV2 runs entirely in-browser (no API key needed). Classifies animal species from uploaded photo against 1000 ImageNet labels. Lazy-loads model once; cached for offline use.</div>
+    <div style="margin-top:8px"><span class="tag r">TensorFlow.js</span><span class="tag y">MobileNetV2</span><span class="tag g">Offline-ready</span></div>
+  </div>
+  <div class="feat c6">
+    <div class="feat-head"><span class="feat-icon">💬</span><span class="feat-title">Groq AI Chatbot</span></div>
+    <div class="feat-body">LLaMA 3.3-70B model via Groq's OpenAI-compatible API. Multi-turn conversation with history. Domain-constrained system prompt covers first aid, rescue guidance, app help. Graceful fallback on rate-limit or error.</div>
+    <div style="margin-top:8px"><span class="tag p">LLaMA 3.3-70B</span><span class="tag">Multi-turn</span><span class="tag g">Domain-scoped</span></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SYSTEM ROLES & USABILITY -->
+<div class="sec-title">System Usability — Role Matrix</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
+  <div class="role-row head">
+    <div class="role-cell">Feature</div>
+    <div class="role-cell">👤 Guest</div>
+    <div class="role-cell">🙋 Citizen</div>
+    <div class="role-cell">🏢 NGO</div>
+    <div class="role-cell">🛡️ Admin</div>
+    <div class="role-cell">💳 Donor</div>
+  </div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">View Pet Listings</div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">Report Stray Case</div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">Accept / Reject Cases</div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">Donate to NGOs</div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">Verify / Deregister NGO</div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="cross">—</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">AI Chatbot Access</div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">NGO Analytics Dashboard</div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">Platform Analytics</div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="cross">—</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">List Pet for Adoption</div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div></div>
+  <div class="role-row"><div class="role-cell" style="color:var(--white);font-weight:600">Leave Feedback / Review</div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="check">✓</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div><div class="role-cell"><span class="cross">—</span></div></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- DATABASE SCHEMA -->
+<div class="sec-title">Database Schema — Key Tables</div>
+<div class="db-grid">
+  <div class="db-card">
+    <div class="db-name">🗄️ users</div>
+    <div class="db-col">id · name · email</div>
+    <div class="db-col">hashed_password</div>
+    <div class="db-col">is_admin (bool)</div>
+    <div class="db-col">→ cases (rel)</div>
+  </div>
+  <div class="db-card">
+    <div class="db-name">🏢 ngos</div>
+    <div class="db-col">id · name · email</div>
+    <div class="db-col">is_verified (bool)</div>
+    <div class="db-col">verification_document_url</div>
+    <div class="db-col">razorpay_account_id · upi_id</div>
+  </div>
+  <div class="db-card">
+    <div class="db-name">🐕 cases</div>
+    <div class="db-col">id · description · status</div>
+    <div class="db-col">latitude · longitude · photo_url</div>
+    <div class="db-col">severity_score · severity_label</div>
+    <div class="db-col">owner_id · accepted_by_ngo_id</div>
+  </div>
+  <div class="db-card">
+    <div class="db-name">🐾 pets</div>
+    <div class="db-col">id · name · species · breed</div>
+    <div class="db-col">age · gender · size · location</div>
+    <div class="db-col">is_vaccinated · status</div>
+    <div class="db-col">image_url · video_url · ngo_id</div>
+  </div>
+  <div class="db-card">
+    <div class="db-name">💰 donations</div>
+    <div class="db-col">id · amount · donor_name</div>
+    <div class="db-col">payment_id · order_id</div>
+    <div class="db-col">status (Pending/Success/Failed)</div>
+    <div class="db-col">ngo_id · timestamp</div>
+  </div>
+  <div class="db-card">
+    <div class="db-name">⭐ feedback</div>
+    <div class="db-col">id · rating (1–5) · comment</div>
+    <div class="db-col">category · ngo_response</div>
+    <div class="db-col">user_id · ngo_id · case_id</div>
+    <div class="db-col">created_at</div>
+  </div>
+  <div class="db-card">
+    <div class="db-name">📋 adoption_requests</div>
+    <div class="db-col">id · pet_id · pet_name</div>
+    <div class="db-col">adopter_name · email · phone</div>
+    <div class="db-col">status · experience · reason</div>
+    <div class="db-col">ngo_id · request_date</div>
+  </div>
+  <div class="db-card">
+    <div class="db-name">✅ donor_verifications</div>
+    <div class="db-col">id · user_id</div>
+    <div class="db-col">email_verified · phone_verified</div>
+    <div class="db-col">email_code · phone_code</div>
+    <div class="db-col">verification_status · verified_at</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- API ROUTES SAMPLE -->
+<div class="sec-title">Key API Endpoints</div>
+<table class="api-table">
+<thead><tr>
+  <th>Method</th><th>Route</th><th>Auth</th><th>Description</th>
+</tr></thead>
+<tbody>
+  <tr><td><span class="method post">POST</span></td><td><code>/users/register</code></td><td>—</td><td>Citizen registration with email &amp; password</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/auth/google</code></td><td>—</td><td>Google OAuth one-tap login, auto-creates user</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/report</code></td><td>Citizen JWT</td><td>Report stray case with GPS coords &amp; photo upload</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/ngo/me/cases</code></td><td>NGO JWT</td><td>Severity-sorted case queue for logged-in NGO</td></tr>
+  <tr><td><span class="method put">PUT</span></td><td><code>/case/{id}/accept</code></td><td>NGO JWT</td><td>Accept case and assign to NGO</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/pets/match</code></td><td>—</td><td>AI Pet Matchmaker — scored adoption suggestions</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/chatbot/query</code></td><td>—</td><td>Multi-turn Groq AI chatbot query</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/hotspots</code></td><td>—</td><td>K-Means clustered danger zones from reported cases</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/stats/summary</code></td><td>—</td><td>Platform-wide KPIs (cases, adoptions, NGO count)</td></tr>
+  <tr><td><span class="method put">PUT</span></td><td><code>/admin/ngos/{id}/verify</code></td><td>Admin JWT</td><td>Verify NGO document and grant platform access</td></tr>
+  <tr><td><span class="method get">GET</span></td><td><code>/admin/dashboard/donations</code></td><td>Admin JWT</td><td>Full donation analytics for admin panel</td></tr>
+  <tr><td><span class="method post">POST</span></td><td><code>/donations/create-order</code></td><td>Citizen JWT</td><td>Create Razorpay order for NGO donation</td></tr>
+</tbody>
+</table>
+
+<!-- FOOTER -->
+<div class="divider"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding-bottom:12px;">
+  <div style="font-size:11px;color:var(--muted)">
+    <span style="color:var(--white);font-weight:600">Backend:</span> Python 3.11 · FastAPI · SQLAlchemy · Uvicorn &nbsp;|&nbsp;
+    <span style="color:var(--white);font-weight:600">Frontend:</span> React 18 · CSS Modules · Chart.js · Leaflet.js &nbsp;|&nbsp;
+    <span style="color:var(--white);font-weight:600">AI:</span> TensorFlow.js · Groq Cloud
+  </div>
+  <div style="font-size:11px;color:var(--muted)">StrayCare © 2026 &nbsp;·&nbsp; <span style="color:var(--accent)">Technical Overview Draft</span></div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,97 @@
+erDiagram
+    USER {
+        int id PK
+        string name
+        string email
+        string hashed_password
+        boolean is_admin
+    }
+    NGO {
+        int id PK
+        string name
+        string email
+        boolean is_verified
+        string upi_id
+        string razorpay_account_id
+    }
+    CASE {
+        int id PK
+        string description
+        float latitude
+        float longitude
+        string photo_url
+        string status
+        int severity_score
+        string severity_label
+        boolean is_adoptable
+        int owner_id FK
+        int accepted_by_ngo_id FK
+    }
+    CASE_UPDATE {
+        int id PK
+        string notes
+        string photo_url
+        int case_id FK
+        int ngo_id FK
+    }
+    PET {
+        int id PK
+        string name
+        string species
+        string breed
+        string age
+        string status
+        string video_url
+        int ngo_id FK
+    }
+    ADOPTION_REQUEST {
+        int id PK
+        string adopter_name
+        string adopter_email
+        string status
+        int pet_id FK
+        int ngo_id FK
+    }
+    DONATION {
+        int id PK
+        float amount
+        string order_id
+        string payment_id
+        string status
+        int ngo_id FK
+    }
+    FEEDBACK {
+        int id PK
+        int rating
+        string comment
+        string category
+        string ngo_response
+        int user_id FK
+        int ngo_id FK
+        int case_id FK
+    }
+    USER_PET_LISTING {
+        int id PK
+        string name
+        string species
+        string status
+        int user_id FK
+    }
+    DONOR_VERIFICATION {
+        int id PK
+        boolean email_verified
+        boolean phone_verified
+        string verification_status
+        int user_id FK
+    }
+
+    USER ||--o{ CASE : "reports"
+    USER ||--o{ FEEDBACK : "writes"
+    USER ||--o{ USER_PET_LISTING : "creates"
+    USER ||--|| DONOR_VERIFICATION : "has"
+    NGO ||--o{ DONATION : "receives"
+    NGO ||--o{ PET : "manages"
+    NGO ||--o{ ADOPTION_REQUEST : "handles"
+    CASE ||--o{ CASE_UPDATE : "has"
+    CASE ||--o| FEEDBACK : "linked to"
+    PET ||--o{ ADOPTION_REQUEST : "gets"

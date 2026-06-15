@@ -1,0 +1,17 @@
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant FastAPI
+    participant NLP_Algorithm
+    participant Database
+
+    User->>Frontend: Fill report form (desc, photo, GPS)
+    Frontend->>FastAPI: POST /report (multipart + JWT)
+    FastAPI->>FastAPI: Verify JWT token
+    FastAPI->>FastAPI: Save photo to /uploads
+    FastAPI->>NLP_Algorithm: calculate_severity_score(description)
+    NLP_Algorithm-->>FastAPI: score + label (Critical/High/Moderate/Low)
+    FastAPI->>Database: INSERT Case with severity
+    Database-->>FastAPI: New Case record
+    FastAPI-->>Frontend: Case JSON response
+    Frontend-->>User: Case reported! Severity badge shown

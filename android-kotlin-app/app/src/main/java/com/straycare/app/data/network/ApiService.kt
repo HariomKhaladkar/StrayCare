@@ -132,6 +132,13 @@ interface ApiService {
     @GET("ngo/me/adoption-requests")
     suspend fun getNgoAdoptionRequests(): Response<List<AdoptionRequest>>
 
+    // ── First Aid ───────────────────────────────────────
+    @GET("first-aid")
+    suspend fun getFirstAidArticles(): Response<List<FirstAidArticle>>
+
+    @GET("first-aid/{id}")
+    suspend fun getFirstAidArticleDetail(@Path("id") id: Int): Response<FirstAidArticleDetail>
+
     @PUT("ngo/adoption-requests/{request_id}/status")
     suspend fun updateAdoptionRequestStatus(
         @Path("request_id") requestId: Int,

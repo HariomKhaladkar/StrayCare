@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import styles from './MyReports.module.css'; // <-- 1. IMPORT THE CSS MODULE
+import styles from './MyReports.module.css';
 import LeaveFeedbackModal from './LeaveFeedbackModal';
+import API_BASE_URL from '../api';
+
 
 const MyReports = () => {
     const [cases, setCases] = useState([]);
@@ -66,7 +68,7 @@ const MyReports = () => {
                         <div key={caseItem.id} className={styles.caseItem}>
                             <div className={styles.caseContent}>
                                 <img 
-                                    src={`http://127.0.0.1:8000/${caseItem.photo_url}`} 
+                                    src={`${API_BASE_URL}/${caseItem.photo_url}`} 
                                     alt="Reported Animal"
                                     className={styles.caseImage}
                                 />

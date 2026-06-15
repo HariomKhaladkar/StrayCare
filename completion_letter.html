@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Completion Letter – StrayCare | ONESNZEROS TECH SOLUTIONS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Libre Baskerville', 'Times New Roman', serif;
+      background: #e8e8e8;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+      min-height: 100vh;
+    }
+
+    .page {
+      background: #ffffff;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 18mm 20mm 20mm 20mm;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #6a0dad;
+      margin-bottom: 4px;
+    }
+
+    .logo-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 68px;
+      height: 68px;
+    }
+
+    .logo-text-block {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+    }
+
+    .logo-text-block .company-name {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: #7b2fbf;
+      letter-spacing: 1px;
+    }
+
+    .logo-text-block .company-sub {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 13.5px;
+      color: #7b2fbf;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-text-block .company-pvt {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 13.5px;
+      color: #7b2fbf;
+      letter-spacing: 0.5px;
+    }
+
+    .contact-block {
+      text-align: right;
+      font-family: 'Inter', sans-serif;
+      font-size: 11.5px;
+      color: #333;
+      line-height: 1.8;
+    }
+
+    .contact-block a {
+      color: #6a0dad;
+      text-decoration: none;
+    }
+
+    .header-accent {
+      text-align: right;
+      margin-top: 4px;
+      margin-bottom: 14px;
+    }
+
+    .header-accent span {
+      display: inline-block;
+      width: 38px;
+      height: 3px;
+      background: #6a0dad;
+      margin-left: 4px;
+    }
+
+    /* ── TITLE ── */
+    .letter-title {
+      text-align: center;
+      font-size: 14.5px;
+      font-weight: 700;
+      text-decoration: underline;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+      color: #111;
+    }
+
+    /* ── BODY ── */
+    .letter-body {
+      font-size: 12.5px;
+      color: #111;
+      line-height: 1.85;
+      flex: 1;
+    }
+
+    .letter-body .date {
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .letter-body .to-block {
+      margin-bottom: 18px;
+    }
+
+    .letter-body .to-block .to-label {
+      font-weight: 700;
+    }
+
+    .letter-body .subject {
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .letter-body .salutation {
+      margin-bottom: 14px;
+    }
+
+    .letter-body p {
+      margin-bottom: 14px;
+      text-align: justify;
+    }
+
+    .letter-body ul {
+      list-style: disc;
+      margin: 0 0 14px 28px;
+    }
+
+    .letter-body ul li {
+      margin-bottom: 6px;
+    }
+
+    .letter-body ul li b {
+      font-weight: 700;
+    }
+
+    .student-list {
+      list-style: none;
+      margin: 0 0 14px 28px;
+    }
+
+    .student-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .student-list li::before {
+      content: "•";
+      color: #6a0dad;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    /* ── SIGNATURE ── */
+    .signature-section {
+      margin-top: 28px;
+    }
+
+    .signature-section p {
+      margin-bottom: 0;
+    }
+
+    .signature-box {
+      margin-top: 40px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .sig-inner {
+      text-align: center;
+    }
+
+    .sig-line {
+      width: 180px;
+      border-top: 1.5px solid #333;
+      margin-bottom: 6px;
+    }
+
+    .sig-label {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .sig-company {
+      font-size: 11px;
+      color: #555;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      margin-top: 24px;
+      border-top: 2px solid #6a0dad;
+      padding-top: 8px;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      color: #888;
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      body { background: none; padding: 0; }
+      .page { box-shadow: none; width: 100%; min-height: unset; }
+      .print-btn { display: none !important; }
+    }
+
+    .print-btn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: linear-gradient(135deg, #7b2fbf, #4a00e0);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 26px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(122,47,191,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+      z-index: 999;
+    }
+
+    .print-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(122,47,191,0.5);
+    }
+  </style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-block">
+      <!-- Colorful grid logo (SVG recreation) -->
+      <svg class="logo-icon" viewBox="0 0 68 68" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2"  y="2"  width="28" height="28" rx="5" fill="#e53935"/>
+        <rect x="34" y="2"  width="28" height="28" rx="5" fill="#43a047"/>
+        <rect x="2"  y="34" width="28" height="28" rx="5" fill="#1e88e5"/>
+        <rect x="34" y="34" width="28" height="28" rx="5" fill="#fb8c00"/>
+        <ellipse cx="34" cy="34" rx="11" ry="11" fill="#9c27b0"/>
+      </svg>
+      <div class="logo-text-block">
+        <span class="company-name">ONESNZEROS</span>
+        <span class="company-sub">TECH SOLUTIONS</span>
+        <span class="company-pvt">PVT. LTD.</span>
+      </div>
+    </div>
+    <div class="contact-block">
+      <div>8459501744</div>
+      <div><a href="mailto:varada@onesnzeros.in">varada@onesnzeros.in</a></div>
+    </div>
+  </div>
+  <div class="header-accent">
+    <span></span><span></span>
+  </div>
+
+  <!-- TITLE -->
+  <div class="letter-title">Letter of Project Completion</div>
+
+  <!-- BODY -->
+  <div class="letter-body">
+
+    <div class="date">12-05-2026</div>
+
+    <div class="to-block">
+      <div class="to-label">To,</div>
+      <div>Dr. Jyoti Surve</div>
+      <div>Head of Department,</div>
+      <div>Department of Information Technology,</div>
+      <div>International Institute of Information Technology (I²IT), Phase-I Hinjawadi, Pune – 411057.</div>
+    </div>
+
+    <div class="subject">
+      Subject: Successful Completion of Sponsored Student Project: "StrayCare: A Stray Animal Rescue &amp; Support Platform"
+    </div>
+
+    <div class="salutation">Dear Dr. Surve,</div>
+
+    <p>
+      We are delighted to inform you that the final year project titled <b>"StrayCare: A Stray Animal Rescue &amp; Support Platform"</b>,
+      undertaken by I²IT students under our technology sponsorship program and internal guidance of
+      <b>Dr. Sonali Patil</b>, has been successfully completed.
+    </p>
+
+    <p><b>Students' Names:</b></p>
+    <ul class="student-list">
+      <li>Mr. Karttikey Chavali</li>
+      <li>Mr. Rajat Kulkarni</li>
+      <li>Mr. Sanath Bhat</li>
+      <li>Mr. Hariom Khaladkar</li>
+    </ul>
+
+    <p>
+      Throughout the internship period (July 2025 to March 2026), these students have exhibited exceptional dedication
+      and technical proficiency. Our sponsorship included comprehensive technical and non-technical support, ensuring
+      they had the necessary resources, guidance, and expertise to successfully implement their project.
+    </p>
+
+    <p>
+      We are pleased to report that the project has met all its objectives and requirements, showcasing innovative
+      solutions and a high level of technical competence. The <b>StrayCare Platform</b> successfully integrates
+      AI-driven stray animal reporting, GIS-based hotspot mapping, smart NGO dispatch, real-time rescue coordination,
+      and an animal food marketplace — all aimed at addressing the critical social issue of stray animal welfare.
+    </p>
+
+    <p>
+      The students' work on this project is a testament to their hard work and the effective collaboration between
+      I²IT and <b>ONESNZEROS TECH SOLUTIONS PVT. LTD.</b> We extend our congratulations to the students and trust
+      this project has significantly contributed to their academic and professional development.
+    </p>
+
+    <p>
+      We wish them continued success in their future endeavors and remain open to future collaborations with
+      I²IT for upcoming student projects.
+    </p>
+
+    <div class="signature-section">
+      <p>Yours sincerely,</p>
+    </div>
+
+    <div class="signature-box">
+      <div class="sig-inner">
+        <div class="sig-line"></div>
+        <div class="sig-label">Authorized Signatory</div>
+        <div class="sig-company">ONESNZEROS TECH SOLUTIONS PVT. LTD.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    ONESNZEROS TECH SOLUTIONS PVT. LTD. &nbsp;|&nbsp; 8459501744 &nbsp;|&nbsp; varada@onesnzeros.in
+  </div>
+
+</div>
+
+</body>
+</html>

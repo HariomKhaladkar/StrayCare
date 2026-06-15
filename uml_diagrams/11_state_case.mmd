@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> Pending : User reports case\nNLP severity auto-assigned
+
+    Pending --> Accepted : NGO accepts
+    Pending --> Rejected : NGO rejects
+
+    Accepted --> Resolved : Case marked resolved
+    Accepted --> Accepted : NGO posts update
+
+    Resolved --> [*]
+    Rejected --> [*]

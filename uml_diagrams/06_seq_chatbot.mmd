@@ -1,0 +1,21 @@
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant FastAPI
+    participant GroqAPI
+    participant FallbackEngine
+
+    User->>Frontend: Type message in chatbot
+    Frontend->>FastAPI: POST /chatbot/query with history[]
+    FastAPI->>FastAPI: Build messages = system_prompt + history + query
+    FastAPI->>GroqAPI: POST chat/completions (Llama 3.3 70B)
+    alt Success
+        GroqAPI-->>FastAPI: AI response text
+        FastAPI-->>Frontend: response
+    else API Error or Timeout
+        GroqAPI-->>FastAPI: Error / Timeout
+        FastAPI->>FallbackEngine: Route to local rule-based engine
+        FallbackEngine-->>FastAPI: Fallback response
+        FastAPI-->>Frontend: Fallback response
+    end
+    Frontend-->>User: Display AI response in chat

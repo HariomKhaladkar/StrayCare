@@ -2,25 +2,25 @@
 .card {
     background-color: #ffffff;
     padding: 2rem;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Enhanced shadow */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     border-radius: 0.75rem;
     max-width: 42rem;
     margin: 2rem auto;
-    border: 1px solid #e5e7eb; /* Added a subtle border for better definition */
+    border: 1px solid #e5e7eb;
 }
 
 .title {
     font-size: 1.875rem;
     font-weight: 800;
     color: #1f2937;
-    text-align: center; /* Centered title */
+    text-align: center;
 }
 
 .subtitle {
-    font-size: 1rem; /* Slightly larger for readability */
+    font-size: 1rem;
     color: #6c757d;
-    margin-bottom: 2.5rem; /* Increased margin */
-    text-align: center; /* Centered subtitle */
+    margin-bottom: 2.5rem;
+    text-align: center;
 }
 
 .form {
@@ -48,16 +48,129 @@
     border: 1px solid #ced4da;
     border-radius: 0.5rem;
     transition: border-color 0.2s, box-shadow 0.2s;
-    font-size: 1rem; /* Consistent font size */
+    font-size: 1rem;
+    box-sizing: border-box;
 }
 
 .textarea:focus,
 .input:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Softer, more prominent focus ring */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
+/* ── Location Controls ── */
+.locationControls {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.locationButton {
+    flex: 1;
+    min-width: 160px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid #3b82f6;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    transition: all 0.2s;
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.35);
+}
+
+.locationButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.45);
+}
+
+.locationButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.locatingSpinner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.manualPickButton {
+    flex: 1;
+    min-width: 140px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid #ced4da;
+    background: #f8f9fa;
+    color: #1f2937;
+    transition: all 0.2s;
+}
+
+.manualPickButton:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+/* ── Map Container ── */
+.mapWrapper {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 2px solid #e5e7eb;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.5rem;
+    animation: mapFadeIn 0.35s ease;
+}
+
+@keyframes mapFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.mapContainer {
+    height: 300px;
+    width: 100%;
+    border-radius: 0.75rem;
+    z-index: 0;
+}
+
+.mapHint {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-style: italic;
+}
+
+/* ── Location Success Display ── */
+.locationSuccess {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    background: linear-gradient(135deg, #d1fae5, #ecfdf5);
+    border: 1px solid #6ee7b7;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    color: #065f46;
+    font-weight: 500;
+}
+
+.locationPinIcon {
+    font-size: 1.1rem;
+}
+
+/* ── Submit Button ── */
 .submitButton {
     width: 100%;
     padding: 0.875rem;
@@ -66,29 +179,29 @@
     font-weight: 700;
     cursor: pointer;
     border: none;
-    background-color: #3b82f6;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
     color: #ffffff;
-    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s; /* Added more transitions */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Added subtle shadow to lift the button */
-    transform: translateY(0);
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
 }
 
 .submitButton:hover:not(:disabled) {
-    background-color: #1e40af;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); /* Larger shadow on hover */
-    transform: translateY(-2px); /* Lift effect on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
 }
 
 .submitButton:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4); /* Consistent focus outline */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
 }
 
 .submitButton:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
 }
 
+/* ── Messages ── */
 .successMessage {
     margin-top: 1.5rem;
     padding: 0.75rem 1rem;
@@ -108,41 +221,3 @@
     color: #842029;
     border: 1px solid #f5c2c7;
 }
-
-/* --- Location Button Styles --- */
-.locationButton {
-    width: 100%;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid #ced4da;
-    background-color: #f8f9fa;
-    color: #1f2937;
-    transition: background-color 0.2s, box-shadow 0.2s;
-}
-
-.locationButton:hover:not(:disabled) {
-    background-color: #e9ecef;
-}
-
-.locationButton:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Consistent focus outline */
-}
-
-.locationButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.locationSuccess {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #059669; /* green-700 */
-    text-align: center;
-    margin-top: 0.75rem;
-}
-

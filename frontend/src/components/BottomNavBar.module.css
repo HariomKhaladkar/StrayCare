@@ -1,0 +1,118 @@
+/* BottomNavBar.module.css — fixed bottom tab bar for Android */
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes tabPop {
+  0%   { transform: scale(1);    }
+  40%  { transform: scale(1.22); }
+  100% { transform: scale(1.12); }
+}
+
+/* ── Bar container ──────────────────────────────────────────── */
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  /* Respect Android navigation bar with safe-area-inset-bottom */
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+  height: calc(62px + env(safe-area-inset-bottom, 8px));
+  background: rgba(10, 10, 20, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(99, 102, 241, 0.22);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+  z-index: 400;
+  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Animated gradient top-border */
+.bottomNav::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f97316, #6366f1);
+  background-size: 300% auto;
+  animation: shimmer 4s linear infinite;
+  opacity: 0.7;
+}
+
+/* ── Individual tab ─────────────────────────────────────────── */
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 10px 2px 4px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.35);
+  transition: color 0.22s ease;
+  position: relative;
+  min-width: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.tab:active {
+  opacity: 0.75;
+}
+
+/* ── Tab icon ───────────────────────────────────────────────── */
+.tabIcon {
+  font-size: 1.4rem;
+  line-height: 1;
+  margin-bottom: 3px;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.22s;
+  display: block;
+}
+
+/* ── Tab label ──────────────────────────────────────────────── */
+.tabLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  transition: color 0.22s;
+  text-transform: uppercase;
+}
+
+/* ── Active state ───────────────────────────────────────────── */
+.activeTab {
+  color: #c4b5fd; /* light purple */
+}
+
+/* Active indicator pill at the top of the tab */
+.activeTab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #ec4899);
+  border-radius: 0 0 4px 4px;
+}
+
+.activeTab .tabIcon {
+  animation: tabPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.65));
+}
+
+.activeTab .tabLabel {
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

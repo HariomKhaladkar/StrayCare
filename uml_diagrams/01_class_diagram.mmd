@@ -1,0 +1,108 @@
+classDiagram
+    class User {
+        +int id
+        +String name
+        +String email
+        +String hashed_password
+        +Boolean is_admin
+    }
+    class NGO {
+        +int id
+        +String name
+        +String email
+        +Boolean is_verified
+        +String razorpay_account_id
+        +String upi_id
+    }
+    class Case {
+        +int id
+        +String description
+        +Float latitude
+        +Float longitude
+        +String photo_url
+        +String status
+        +DateTime created_at
+        +int owner_id
+        +int accepted_by_ngo_id
+        +int severity_score
+        +String severity_label
+        +Boolean is_adoptable
+    }
+    class CaseUpdate {
+        +int id
+        +String notes
+        +String photo_url
+        +DateTime created_at
+        +int case_id
+        +int ngo_id
+    }
+    class Pet {
+        +int id
+        +String name
+        +String species
+        +String breed
+        +String age
+        +String gender
+        +String size
+        +Boolean is_vaccinated
+        +String status
+        +int ngo_id
+    }
+    class AdoptionRequest {
+        +int id
+        +int pet_id
+        +String adopter_name
+        +String adopter_email
+        +String status
+        +DateTime request_date
+        +int ngo_id
+    }
+    class Donation {
+        +int id
+        +Float amount
+        +String donor_name
+        +String payment_id
+        +String order_id
+        +String status
+        +int ngo_id
+        +DateTime timestamp
+    }
+    class Feedback {
+        +int id
+        +int rating
+        +String comment
+        +String category
+        +String ngo_response
+        +int user_id
+        +int ngo_id
+        +int case_id
+    }
+    class UserPetListing {
+        +int id
+        +String name
+        +String species
+        +String age
+        +String location
+        +String image_url
+        +String status
+        +int user_id
+    }
+    class DonorVerification {
+        +int id
+        +int user_id
+        +Boolean email_verified
+        +Boolean phone_verified
+        +String verification_status
+        +DateTime verified_at
+    }
+
+    User "1" --> "many" Case : reports
+    User "1" --> "many" Feedback : gives
+    User "1" --> "many" UserPetListing : lists
+    User "1" --> "1" DonorVerification : has
+    NGO "1" --> "many" Donation : receives
+    NGO "1" --> "many" Pet : manages
+    NGO "1" --> "many" AdoptionRequest : reviews
+    Case "1" --> "many" CaseUpdate : has
+    Case "1" --> "0..1" Feedback : receives
+    Pet "1" --> "many" AdoptionRequest : generates

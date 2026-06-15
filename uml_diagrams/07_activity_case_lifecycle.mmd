@@ -1,0 +1,15 @@
+flowchart TD
+    Start(["🟢 Start"]) --> A["User Reports Case\nwith Photo & GPS"]
+    A --> B["Auto NLP Severity Scoring\nCritical / High / Moderate / Low"]
+    B --> C["Case Saved as Pending"]
+    C --> D{"NGO Reviews Case"}
+    D -->|Accept| E["Case → Accepted\nNGO linked to case"]
+    D -->|Reject| F["Case → Rejected"]
+    E --> G["NGO Posts Progress Updates\nwith notes and photos"]
+    G --> H{"Case Resolved?"}
+    H -->|No| G
+    H -->|Yes| I["Case → Resolved"]
+    I --> J["User Leaves Feedback\nRating + Comment + Category"]
+    J --> K["NGO Responds to Feedback\nPublic Response Posted"]
+    K --> End(["🔴 End"])
+    F --> End

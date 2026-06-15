@@ -1,0 +1,49 @@
+flowchart LR
+    U(["👤 Citizen"])
+    N(["🏥 NGO"])
+    A(["🔑 Admin"])
+    G(["🌐 Guest"])
+
+    subgraph Citizen_Features["Citizen Features"]
+        UC1["Register / Login"]
+        UC2["Google OAuth Login"]
+        UC3["Report Stray Case"]
+        UC4["View My Reports & Status"]
+        UC5["Submit Feedback"]
+        UC6["Browse & Request Adoption"]
+        UC7["Use AI Pet Matchmaker"]
+        UC8["Donate to NGO"]
+        UC9["Verify Donor Identity"]
+        UC10["List Personal Pet"]
+    end
+
+    subgraph NGO_Features["NGO Features"]
+        UC11["Register & Upload Doc"]
+        UC12["Accept / Reject Cases"]
+        UC13["Post Case Updates"]
+        UC14["Add Pets for Adoption"]
+        UC15["Manage Adoption Requests"]
+        UC16["View NGO Analytics"]
+        UC17["Respond to Feedback"]
+        UC18["Review Citizen Pet Listings"]
+    end
+
+    subgraph Admin_Features["Admin Features"]
+        UC19["Verify / Deregister NGO"]
+        UC20["View All Feedback"]
+        UC21["Admin Analytics Dashboard"]
+        UC22["Smart NGO Dispatch"]
+        UC23["Hotspot Zone Map"]
+    end
+
+    subgraph Guest_Features["Public / Guest"]
+        UC24["Browse Pets for Adoption"]
+        UC25["View Donor Dashboard"]
+        UC26["First Aid Guides"]
+        UC27["AI Chatbot"]
+    end
+
+    U --> Citizen_Features
+    N --> NGO_Features
+    A --> Admin_Features
+    G --> Guest_Features
