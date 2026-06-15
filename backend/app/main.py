@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 import razorpay  
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
@@ -1134,12 +1135,17 @@ def update_ngo_upi(
 
 
 # ---------- CREATE ORDER (Platform account only, NO transfers) ----------
+class DonationOrderRequest(BaseModel):
+    amount: float
+    ngo_id: int
+
 @app.post("/donations/create-order")
 def create_payment_order(
-    amount: float = Body(...),
-    ngo_id: int = Body(...),
+    payload: DonationOrderRequest,
     db: Session = Depends(get_db)
 ):
+    amount = payload.amount
+    ngo_id = payload.ngo_id
     ngo = crud.get_ngo_by_id(db, ngo_id)
     if not ngo:
         raise HTTPException(status_code=404, detail="NGO not found")
