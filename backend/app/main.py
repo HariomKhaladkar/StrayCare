@@ -141,14 +141,26 @@ def startup_event():
     # --- Safe Seeding Logic ---
     try:
         # Create TEST NGO only if does NOT exist
-        if not crud.get_ngo_by_email(db, "testngo@example.com"):
+        test_ngo = crud.get_ngo_by_email(db, "testngo@example.com")
+        if not test_ngo:
             crud.create_test_ngo(db)
             print("[OK] Test NGO seeded.")
+        else:
+            # Force reset password to ensure it works
+            test_ngo.hashed_password = security.get_password_hash("password")
+            test_ngo.is_verified = True
+            db.commit()
 
         # Create TEST ADMIN only if does NOT exist
-        if not crud.get_user_by_email(db, "admin@straycare.com"):
+        test_admin = crud.get_user_by_email(db, "admin@straycare.com")
+        if not test_admin:
             crud.create_test_admin(db)
             print("[OK] Test Admin seeded.")
+        else:
+            # Force reset password to ensure it works
+            test_admin.hashed_password = security.get_password_hash("adminpassword")
+            test_admin.is_admin = True
+            db.commit()
 
         # Seed pets only if no pets exist
         if db.query(models.Pet).count() == 0:
