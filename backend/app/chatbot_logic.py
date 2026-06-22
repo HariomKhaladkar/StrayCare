@@ -33,7 +33,8 @@ def get_chatbot_response(query: str, history: list = []) -> str:
     Supports multi-turn conversation via the `history` list.
     Falls back gracefully if the API key is missing or the call fails.
     """
-    api_key = os.getenv("GROQ_API_KEY")
+    _key = os.getenv("GROQ_API_KEY", "").strip()
+    api_key = _key if _key else "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"
 
     if not api_key:
         return (

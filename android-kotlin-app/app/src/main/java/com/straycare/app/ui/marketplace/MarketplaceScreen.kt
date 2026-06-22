@@ -21,8 +21,12 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.straycare.app.data.models.FoodItem
 import com.straycare.app.data.models.FoodOrder
+import com.straycare.app.data.models.FoodOrderRequest
 import com.straycare.app.data.network.ApiClient
+import com.straycare.app.data.network.TokenManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,7 +123,7 @@ fun FoodItemCard(item: FoodItem, onAddToCart: (FoodItem) -> Unit) {
             val url = if (item.image_url?.startsWith("http") == true)
                 item.image_url
             else
-                "http://10.225.114.63:8000/${item.image_url}"
+                "${ApiClient.BASE_URL}${item.image_url}"
             AsyncImage(
                 model = url,
                 contentDescription = item.name,
@@ -198,10 +202,33 @@ fun AddToCartDialog(item: FoodItem, onDismiss: () -> Unit) {
                             onClick = {
                                 if (address.isNotBlank()) {
                                     isOrdering = true
-                                    coroutineScope.launch {
-                                        kotlinx.coroutines.delay(1500)
-                                        isOrdering = false
-                                        isSuccess = true
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        try {
+                                            val userName = TokenManager.getUserName()
+                                            val userEmail = TokenManager.getUserEmail()
+                                            val req = FoodOrderRequest(
+                                                product_id = item.id,
+                                                quantity = quantity,
+                                                buyer_name = userName,
+                                                buyer_email = userEmail,
+                                                buyer_phone = "9999999999",
+                                                delivery_address = address
+                                            )
+                                            val res = ApiClient.apiService.placeFoodOrder(req)
+                                            withContext(Dispatchers.Main) {
+                                                isOrdering = false
+                                                isSuccess = res.isSuccessful
+                                                if (!res.isSuccessful) {
+                                                    // Show error but still close dialog
+                                                    isSuccess = false
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            withContext(Dispatchers.Main) {
+                                                isOrdering = false
+                                                isSuccess = false
+                                            }
+                                        }
                                     }
                                 }
                             },

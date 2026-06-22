@@ -48,6 +48,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import android.graphics.BitmapFactory
 import android.location.Location
+import androidx.activity.result.contract.ActivityResultContracts.GetContent
+import java.io.FileOutputStream
 
 @Composable
 fun ReportCaseScreen() {
@@ -98,9 +100,33 @@ fun CameraAndLocationView(context: Context) {
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     var description by remember { mutableStateOf("") }
     var animalPrediction by remember { mutableStateOf<AnimalDetectionResult?>(null) }
-    var animalDetected by remember { mutableStateOf<Boolean?>(null) } // null=analyzing, true=ok, false=no animal
+    var animalDetected by remember { mutableStateOf<Boolean?>(null) }
     var currentLocation by remember { mutableStateOf<Location?>(null) }
     var reportSuccess by remember { mutableStateOf(false) }
+
+    // Gallery picker launcher
+    val galleryLauncher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
+        uri?.let {
+            isAnalyzing = true
+            // Copy URI to a cache file so we can upload it as a File
+            val file = File(context.cacheDir, "straycare_gallery_${System.currentTimeMillis()}.jpg")
+            try {
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(file).use { output -> input.copyTo(output) }
+                }
+                capturedImageFile = file
+                val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                AnimalRecognizer.analyze(context, bitmap) { result ->
+                    isAnalyzing = false
+                    animalPrediction = result
+                    animalDetected = result != null
+                }
+            } catch (e: Exception) {
+                isAnalyzing = false
+                Toast.makeText(context, "Failed to load image", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // Fetch location on launch
     LaunchedEffect(Unit) {
@@ -322,47 +348,69 @@ fun CameraAndLocationView(context: Context) {
                 }
             }
 
-            // Capture button
+            // Camera capture + gallery buttons
             Box(Modifier.fillMaxSize().padding(bottom = 48.dp), contentAlignment = Alignment.BottomCenter) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("AI will verify the animal automatically", color = Color.White.copy(0.7f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 16.dp))
-                    Box(
-                        Modifier.size(76.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(0.15f))
-                            .clip(CircleShape),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
-                        Button(
-                            onClick = {
-                                val file = File(context.cacheDir, "straycare_case_${System.currentTimeMillis()}.jpg")
-                                val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
-                                isAnalyzing = true
-                                imageCapture?.takePicture(
-                                    outputOptions,
-                                    ContextCompat.getMainExecutor(context),
-                                    object : ImageCapture.OnImageSavedCallback {
-                                        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                                            capturedImageFile = file
-                                            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-                                            AnimalRecognizer.analyze(context, bitmap) { result ->
+                        // Gallery picker button
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Button(
+                                onClick = { galleryLauncher.launch("image/*") },
+                                modifier = Modifier.size(54.dp),
+                                shape = CircleShape,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A2E)),
+                                contentPadding = PaddingValues(0.dp)
+                            ) { Text("🖼️", fontSize = 22.sp) }
+                            Spacer(Modifier.height(6.dp))
+                            Text("Gallery", color = Color.White.copy(0.6f), fontSize = 10.sp)
+                        }
+
+                        // Camera shutter button
+                        Box(
+                            Modifier.size(76.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(0.15f))
+                                .clip(CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Button(
+                                onClick = {
+                                    val file = File(context.cacheDir, "straycare_case_${System.currentTimeMillis()}.jpg")
+                                    val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
+                                    isAnalyzing = true
+                                    imageCapture?.takePicture(
+                                        outputOptions,
+                                        ContextCompat.getMainExecutor(context),
+                                        object : ImageCapture.OnImageSavedCallback {
+                                            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                                                capturedImageFile = file
+                                                val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                                                AnimalRecognizer.analyze(context, bitmap) { result ->
+                                                    isAnalyzing = false
+                                                    animalPrediction = result
+                                                    animalDetected = result != null
+                                                }
+                                            }
+                                            override fun onError(exception: ImageCaptureException) {
                                                 isAnalyzing = false
-                                                animalPrediction = result
-                                                animalDetected = result != null
+                                                Log.e("CameraX", "Photo capture failed: ${exception.message}", exception)
                                             }
                                         }
-                                        override fun onError(exception: ImageCaptureException) {
-                                            isAnalyzing = false
-                                            Log.e("CameraX", "Photo capture failed: ${exception.message}", exception)
-                                        }
-                                    }
-                                )
-                            },
-                            modifier = Modifier.size(64.dp),
-                            shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6)),
-                            contentPadding = PaddingValues(0.dp)
-                        ) { Text("📷", fontSize = 28.sp) }
+                                    )
+                                },
+                                modifier = Modifier.size(64.dp),
+                                shape = CircleShape,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6)),
+                                contentPadding = PaddingValues(0.dp)
+                            ) { Text("📷", fontSize = 28.sp) }
+                        }
+
+                        // Spacer to balance layout
+                        Spacer(Modifier.size(54.dp))
                     }
                 }
             }

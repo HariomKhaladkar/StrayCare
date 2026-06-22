@@ -128,6 +128,9 @@ interface ApiService {
     @GET("food/orders/me")
     suspend fun getFoodOrders(): Response<List<FoodOrder>>
 
+    @POST("food/order")
+    suspend fun placeFoodOrder(@Body request: FoodOrderRequest): Response<FoodOrder>
+
     // ── NGO: Adoption Requests ──────────────────────────
     @GET("ngo/me/adoption-requests")
     suspend fun getNgoAdoptionRequests(): Response<List<AdoptionRequest>>

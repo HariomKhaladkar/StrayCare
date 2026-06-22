@@ -129,6 +129,15 @@ data class FoodOrder(
     val ordered_at: String?
 )
 
+data class FoodOrderRequest(
+    val product_id: Int,
+    val quantity: Int,
+    val buyer_name: String,
+    val buyer_email: String,
+    val buyer_phone: String,
+    val delivery_address: String
+)
+
 data class RazorpayOrderRequest(
     val amount: Double,
     val ngo_id: Int
