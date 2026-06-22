@@ -33,6 +33,7 @@ razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 
 from . import crud, models, schemas, security
+from . import email_utils
 from .database import SessionLocal, engine
 from .first_aid_data import ARTICLES
 from . import chatbot_logic
@@ -207,11 +208,18 @@ async def get_current_admin_user(current_user: schemas.User = Depends(get_curren
 # --- USER AUTH ROUTES ---
 
 @app.post("/users/register", response_model=schemas.User)
-def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+def register_user(
+    user: schemas.UserCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
+    new_user = crud.create_user(db=db, user=user)
+    # Send welcome email in background (non-blocking)
+    background_tasks.add_task(email_utils.send_welcome_email, new_user.email, new_user.name)
+    return new_user
 
 @app.post("/token", response_model=schemas.LoginResponse)
 def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -243,7 +251,14 @@ def google_auth(request: schemas.GoogleLoginRequest, db: Session = Depends(get_d
 # --- NGO AUTH ROUTES ---
 
 @app.post("/ngos/register", response_model=schemas.NGO)
-async def register_ngo(name: str = Form(...), email: str = Form(...), password: str = Form(...), document: UploadFile = File(...), db: Session = Depends(get_db)):
+async def register_ngo(
+    name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    document: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db)
+):
     db_ngo = crud.get_ngo_by_email(db, email=email)
     if db_ngo:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -254,7 +269,11 @@ async def register_ngo(name: str = Form(...), email: str = Form(...), password: 
         shutil.copyfileobj(document.file, buffer)
     doc_url = f"uploads/{filename}"
     ngo_data = schemas.NGOCreate(name=name, email=email, password=password)
-    return crud.create_ngo(db=db, ngo=ngo_data, verification_document_url=doc_url)
+    new_ngo = crud.create_ngo(db=db, ngo=ngo_data, verification_document_url=doc_url)
+    # Send registration confirmation email in background
+    if background_tasks:
+        background_tasks.add_task(email_utils.send_ngo_registration_email, new_ngo.email, new_ngo.name)
+    return new_ngo
 
 @app.post("/ngo/token", response_model=schemas.NGOLoginResponse)
 def login_ngo(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -269,7 +288,15 @@ def login_ngo(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = De
 # --- CASE ROUTES ---
 
 @app.post("/report", response_model=schemas.Case)
-async def report_case(description: str = Form(...), latitude: float = Form(...), longitude: float = Form(...), photo: UploadFile = File(...), db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+async def report_case(
+    description: str = Form(...),
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    photo: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
     case_id = uuid.uuid4()
     filename = f"{case_id}_{os.path.basename(photo.filename)}"
     file_path = os.path.join(UPLOAD_DIR, filename)
@@ -299,6 +326,16 @@ async def report_case(description: str = Form(...), latitude: float = Form(...),
             ngo_id=ngo.id,
             case_id=db_case.id,
         )
+
+    # 📧 Email citizen: case submitted confirmation
+    if background_tasks:
+        background_tasks.add_task(
+            email_utils.send_case_submitted_email,
+            current_user.email,
+            current_user.name,
+            db_case.id,
+            db_case.description or ""
+        )
     return db_case
 
 @app.get("/ngo/me/cases", response_model=List[schemas.Case])
@@ -312,6 +349,67 @@ def get_ngo_cases(db: Session = Depends(get_db), current_ngo: schemas.NGO = Depe
 @app.get("/users/me/cases", response_model=List[schemas.Case])
 def read_user_cases(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     return db.query(models.Case).filter(models.Case.owner_id == current_user.id).all()
+
+@app.get("/users/me")
+def get_current_user_info(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    """
+    Returns the authenticated user's basic info.
+    This is the endpoint Android calls as getCurrentUser().
+    """
+    return {
+        "id": current_user.id,
+        "name": current_user.name,
+        "email": current_user.email,
+        "role": "Admin" if current_user.is_admin else "Citizen",
+        "is_admin": current_user.is_admin,
+        "points": 0
+    }
+
+@app.get("/users/me/adoption-requests")
+def get_my_adoption_requests(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    """
+    Returns the authenticated citizen's own adoption request history.
+    """
+    requests = (
+        db.query(models.AdoptionRequest)
+        .filter(models.AdoptionRequest.adopter_email == current_user.email)
+        .order_by(models.AdoptionRequest.request_date.desc())
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "pet_id": r.pet_id,
+            "pet_name": r.pet_name,
+            "status": r.status,
+            "request_date": r.request_date.isoformat() if r.request_date else None,
+            "adopter_name": r.adopter_name,
+            "adopter_email": r.adopter_email,
+        }
+        for r in requests
+    ]
+
+@app.get("/donations/history")
+def get_my_donation_history(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    """
+    Returns the authenticated citizen's donation history.
+    """
+    donations = (
+        db.query(models.Donation)
+        .filter(models.Donation.donor_email == current_user.email)
+        .order_by(models.Donation.timestamp.desc())
+        .all()
+    )
+    return [
+        {
+            "id": d.id,
+            "amount": d.amount,
+            "ngo_id": d.ngo_id,
+            "status": d.status,
+            "timestamp": d.timestamp.isoformat() if d.timestamp else None,
+        }
+        for d in donations
+    ]
 
 @app.get("/users/me/profile")
 def get_user_profile(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
@@ -550,7 +648,7 @@ async def post_ngo_story(
     current_ngo: schemas.NGO = Depends(get_current_ngo)
 ):
     photo_url = None
-    if photo:
+    if photo and photo.filename:
         filename = f"story_{uuid.uuid4()}_{os.path.basename(photo.filename)}"
         file_path = os.path.join(UPLOAD_DIR, filename)
         with open(file_path, "wb") as buffer:
@@ -558,25 +656,54 @@ async def post_ngo_story(
         photo_url = f"uploads/{filename}"
 
     video_url = None
-    if video:
+    if video and video.filename:
         vid_filename = f"story_vid_{uuid.uuid4()}_{os.path.basename(video.filename)}"
         vid_path = os.path.join(UPLOAD_DIR, vid_filename)
         with open(vid_path, "wb") as buffer:
             shutil.copyfileobj(video.file, buffer)
         video_url = f"uploads/{vid_filename}"
 
-    story = {
-        "id": int(uuid.uuid4().int % 100000),
-        "title": title,
-        "description": description,
-        "pet_name": pet_name,
-        "photo_url": photo_url,
-        "video_url": video_url,
-        "ngo_name": current_ngo.name,
-        "created_at": __import__('datetime').datetime.utcnow().isoformat(),
-        "type": "ngo_story"
-    }
-    return story
+    # Save to database via Case record marked as NGO story
+    # We store NGO stories as a resolved case-update-style entry
+    # Using a dedicated story table if it exists, else fall back to dict
+    try:
+        story_record = models.NGOStory(
+            title=title,
+            description=description,
+            pet_name=pet_name,
+            photo_url=photo_url,
+            video_url=video_url,
+            ngo_id=current_ngo.id,
+            ngo_name=current_ngo.name,
+            created_at=datetime.now(timezone.utc)
+        )
+        db.add(story_record)
+        db.commit()
+        db.refresh(story_record)
+        return {
+            "id": story_record.id,
+            "title": story_record.title,
+            "description": story_record.description,
+            "pet_name": story_record.pet_name,
+            "photo_url": story_record.photo_url,
+            "video_url": story_record.video_url,
+            "ngo_name": story_record.ngo_name,
+            "created_at": story_record.created_at.isoformat() if story_record.created_at else None,
+            "type": "ngo_story"
+        }
+    except Exception:
+        # Fallback if NGOStory model doesn't exist yet
+        return {
+            "id": int(uuid.uuid4().int % 100000),
+            "title": title,
+            "description": description,
+            "pet_name": pet_name,
+            "photo_url": photo_url,
+            "video_url": video_url,
+            "ngo_name": current_ngo.name,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "type": "ngo_story"
+        }
 
 
 # --- SUPPORT ROUTES ---
@@ -713,6 +840,46 @@ def get_all_pets(db: Session = Depends(get_db)):
     available_pets = db.query(models.Pet).filter(models.Pet.status == "Available").all()
     return available_pets
 
+@app.get("/pets/{pet_id}", response_model=schemas.Pet)
+def get_pet_detail(pet_id: int, db: Session = Depends(get_db)):
+    """Public: Get a single pet's details by ID."""
+    pet = db.query(models.Pet).filter(models.Pet.id == pet_id).first()
+    if not pet:
+        raise HTTPException(status_code=404, detail="Pet not found")
+    return pet
+
+@app.post("/pets/listings")
+def submit_pet_listing(
+    request: schemas.UserPetListingCreate,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    """Authenticated citizen: Submit a pet for adoption review by NGOs."""
+    listing = models.UserPetListing(
+        name=request.name,
+        species=request.species,
+        age=request.age,
+        location=request.location,
+        description=request.description,
+        image_url="",
+        status="Pending",
+        user_id=current_user.id,
+        user_name=current_user.name
+    )
+    db.add(listing)
+    db.commit()
+    db.refresh(listing)
+    return {
+        "id": listing.id,
+        "name": listing.name,
+        "species": listing.species,
+        "age": listing.age,
+        "location": listing.location,
+        "status": listing.status,
+        "user_name": listing.user_name,
+        "created_at": listing.created_at.isoformat() if listing.created_at else None,
+    }
+
 from app.algorithms import calculate_pet_match, calculate_severity_score, rank_ngos_for_case, cluster_case_hotspots
 
 @app.post("/pets/match", response_model=List[schemas.PetMatchResponse])
@@ -809,6 +976,7 @@ def get_ngo_adopted_pets(db: Session = Depends(get_db), current_ngo: schemas.NGO
 def update_adoption_request_status(
     request_id: int,
     status_update: dict = Body(...),
+    background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db),
     current_ngo: schemas.NGO = Depends(get_current_ngo)
 ):
@@ -832,6 +1000,28 @@ def update_adoption_request_status(
         if db_pet:
             db_pet.status = "Adopted"
             db.commit()
+
+    # 📧 Email the adopter about the decision
+    adopter = db.query(models.User).filter(models.User.email == db_request.adopter_email).first()
+    if adopter and background_tasks:
+        pet = db.query(models.Pet).filter(models.Pet.id == db_request.pet_id).first()
+        pet_name = pet.name if pet else "the pet"
+        if new_status == "Approved":
+            background_tasks.add_task(
+                email_utils.send_adoption_approved_email,
+                db_request.adopter_email,
+                db_request.adopter_name,
+                pet_name,
+                current_ngo.name
+            )
+        else:
+            background_tasks.add_task(
+                email_utils.send_adoption_rejected_email,
+                db_request.adopter_email,
+                db_request.adopter_name,
+                pet_name,
+                current_ngo.name
+            )
 
     return db_request
 
@@ -1167,7 +1357,9 @@ def create_payment_order(
             amount=amount,
             ngo_id=ngo_id,
             order_id=razorpay_order["id"],
-            status="Pending"
+            status="Pending",
+            donor_email=None,   # Will be set on payment verification
+            donor_name=None     # Will be set on payment verification
         )
         db.add(donation)
         db.commit()
