@@ -62,6 +62,18 @@ class CaseUpdate(Base):
 
     case = relationship("Case", back_populates="updates")
 
+class NGOStory(Base):
+    __tablename__ = "ngo_stories"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    pet_name = Column(String, nullable=True)
+    photo_url = Column(String, nullable=True)
+    video_url = Column(String, nullable=True)
+    ngo_id = Column(Integer, ForeignKey("ngos.id"))
+    ngo_name = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class Pet(Base):
     __tablename__ = "pets"
     id = Column(Integer, primary_key=True, index=True)
