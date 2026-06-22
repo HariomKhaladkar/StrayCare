@@ -34,6 +34,7 @@ razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 from . import crud, models, schemas, security
 from . import email_utils
+from . import fcm_utils
 from .database import SessionLocal, engine
 from .first_aid_data import ARTICLES
 from . import chatbot_logic
@@ -120,6 +121,10 @@ def startup_event():
 
     # NGOs table: add upi_id for direct UPI fallback
     add_column_if_missing("ngos", "upi_id", "TEXT")
+    
+    # Add FCM Token columns
+    add_column_if_missing("users", "fcm_token", "TEXT")
+    add_column_if_missing("ngos", "fcm_token", "TEXT")
 
     # --- Check if tables exist (for logging only) ---
     required_tables = ["ngos", "users", "pets", "donations", "cases", "feedback", "user_pet_listings", "notifications"]
@@ -248,6 +253,13 @@ def google_auth(request: schemas.GoogleLoginRequest, db: Session = Depends(get_d
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
 
+@app.put("/users/me/fcm-token")
+def update_user_fcm_token(token_data: dict = Body(...), db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    db_user = crud.get_user_by_email(db, current_user.email)
+    db_user.fcm_token = token_data.get("fcm_token")
+    db.commit()
+    return {"status": "success"}
+
 # --- NGO AUTH ROUTES ---
 
 @app.post("/ngos/register", response_model=schemas.NGO)
@@ -285,6 +297,13 @@ def login_ngo(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = De
     access_token = security.create_access_token(data={"sub": ngo.email, "scope": "ngo"})
     return {"access_token": access_token, "token_type": "bearer", "ngo": ngo}
 
+@app.put("/ngo/me/fcm-token")
+def update_ngo_fcm_token(token_data: dict = Body(...), db: Session = Depends(get_db), current_ngo: schemas.NGO = Depends(get_current_ngo)):
+    db_ngo = crud.get_ngo_by_email(db, current_ngo.email)
+    db_ngo.fcm_token = token_data.get("fcm_token")
+    db.commit()
+    return {"status": "success"}
+
 # --- CASE ROUTES ---
 
 @app.post("/report", response_model=schemas.Case)
@@ -319,13 +338,16 @@ async def report_case(
     # 🔔 Notify all verified NGOs about the new case
     all_ngos = db.query(models.NGO).filter(models.NGO.is_verified == True).all()
     for ngo in all_ngos:
+        msg = f"🚨 New case reported near ({db_case.latitude:.4f}, {db_case.longitude:.4f}) — {(db_case.description or '')[:60]}"
         crud.create_notification(
             db=db,
-            message=f"🚨 New case reported near ({db_case.latitude:.4f}, {db_case.longitude:.4f}) — {(db_case.description or '')[:60]}",
+            message=msg,
             notif_type="new_case",
             ngo_id=ngo.id,
             case_id=db_case.id,
         )
+        if ngo.fcm_token and background_tasks:
+            background_tasks.add_task(fcm_utils.send_push_notification, ngo.fcm_token, "New Rescue Case!", msg)
 
     # 📧 Email citizen: case submitted confirmation
     if background_tasks:
@@ -477,17 +499,21 @@ def read_case_details(case_id: int, db: Session = Depends(get_db)):
     return db_case
 
 @app.put("/case/{case_id}/accept", response_model=schemas.Case)
-def accept_case(case_id: int, db: Session = Depends(get_db), current_ngo: schemas.NGO = Depends(get_current_ngo)):
+def accept_case(case_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_ngo: schemas.NGO = Depends(get_current_ngo)):
     db_case = crud.update_case_status(db=db, case_id=case_id, status="Accepted", ngo_id=current_ngo.id)
     # 🔔 Notify the citizen who reported this case
     if db_case and db_case.owner_id:
+        msg = f"✅ Your case #{case_id} has been accepted by {current_ngo.name}!"
         crud.create_notification(
             db=db,
-            message=f"✅ Your case #{case_id} has been accepted by {current_ngo.name}!",
+            message=msg,
             notif_type="case_accepted",
             user_id=db_case.owner_id,
             case_id=case_id,
         )
+        owner = db.query(models.User).filter(models.User.id == db_case.owner_id).first()
+        if owner and owner.fcm_token:
+            background_tasks.add_task(fcm_utils.send_push_notification, owner.fcm_token, "Case Accepted! 🎉", msg)
     return db_case
 
 @app.put("/case/{case_id}/reject", response_model=schemas.Case)

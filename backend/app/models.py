@@ -11,6 +11,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_admin = Column(Boolean, default=False)
+    fcm_token = Column(String, nullable=True)
     cases = relationship("Case", back_populates="owner")
 
 class NGO(Base):
@@ -24,6 +25,7 @@ class NGO(Base):
     donations = relationship("Donation", back_populates="ngo")
     razorpay_account_id = Column(String, nullable=True)
     upi_id = Column(String, nullable=True)  # e.g. "testngo@upi" for direct UPI fallback
+    fcm_token = Column(String, nullable=True)
     
 class Case(Base):
     __tablename__ = "cases"
