@@ -126,6 +126,9 @@ def startup_event():
     add_column_if_missing("users", "fcm_token", "TEXT")
     add_column_if_missing("ngos", "fcm_token", "TEXT")
 
+    # UserPetListing: add user_name column (was missing, caused 500 on pet listing)
+    add_column_if_missing("user_pet_listings", "user_name", "TEXT")
+
     # --- Check if tables exist (for logging only) ---
     required_tables = ["ngos", "users", "pets", "donations", "cases", "feedback", "user_pet_listings", "notifications"]
     existing_tables = inspector.get_table_names()

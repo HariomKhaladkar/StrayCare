@@ -168,12 +168,13 @@ class UserPetListing(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     species = Column(String, nullable=False)
-    age = Column(String, nullable=False)
+    age = Column(String, nullable=True)      # Optional
     location = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    image_url = Column(String, nullable=False)
+    image_url = Column(String, nullable=True)  # Made optional (no image upload required)
     status = Column(String, default="Pending")  # Pending, Approved, Rejected
     created_at = Column(DateTime, default=datetime.utcnow)
+    user_name = Column(String, nullable=True)  # Display name of the submitter
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user = relationship("User")
