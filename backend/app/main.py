@@ -648,6 +648,7 @@ def get_recovery_stories(db: Session = Depends(get_db)):
                 "id": s.id + 100000, # prevent id collision
                 "description": s.description,
                 "photo_url": s.photo_url,
+                "video_url": s.video_url, # added video_url here
                 "severity_label": "Success",
                 "created_at": s.created_at.isoformat() if s.created_at else None,
                 "pet_name": s.pet_name or s.title,
