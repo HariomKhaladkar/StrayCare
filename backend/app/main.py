@@ -118,6 +118,9 @@ def startup_event():
     add_column_if_missing("cases", "temperament", "TEXT")
     add_column_if_missing("cases", "severity_score", "INTEGER DEFAULT 0")
     add_column_if_missing("cases", "severity_label", "TEXT DEFAULT 'Low'")
+    add_column_if_missing("cases", "likes", "INTEGER DEFAULT 0")
+    
+    add_column_if_missing("ngo_stories", "likes", "INTEGER DEFAULT 0")
 
     # NGOs table: add upi_id for direct UPI fallback
     add_column_if_missing("ngos", "upi_id", "TEXT")
