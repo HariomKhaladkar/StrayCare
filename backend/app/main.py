@@ -635,47 +635,69 @@ def mark_ngo_notifications_read(db: Session = Depends(get_db), current_ngo: mode
 @app.get("/stories")
 def get_recovery_stories(db: Session = Depends(get_db)):
     """
-    Public: Returns all resolved cases that have at least one NGO update.
+    Public: Returns all explicit NGO Stories and legacy resolved cases.
     Powers the public Recovery Stories feed.
     """
-    resolved_cases = (
-        db.query(models.Case)
-        .filter(models.Case.status == "Resolved")
-        .order_by(models.Case.created_at.desc())
-        .all()
-    )
     stories = []
-    for case in resolved_cases:
-        updates = (
-            db.query(models.CaseUpdate)
-            .filter(models.CaseUpdate.case_id == case.id)
-            .order_by(models.CaseUpdate.created_at.asc())
-            .all()
-        )
-        ngo_name = None
-        if case.accepted_by_ngo_id:
-            ngo = db.query(models.NGO).filter(models.NGO.id == case.accepted_by_ngo_id).first()
-            ngo_name = ngo.name if ngo else None
-        stories.append({
-            "id": case.id,
-            "description": case.description,
-            "photo_url": case.photo_url,
-            "severity_label": case.severity_label or "Low",
-            "created_at": case.created_at.isoformat() if case.created_at else None,
-            "pet_name": case.pet_name,
-            "adoption_story": case.adoption_story,
-            "temperament": case.temperament,
-            "ngo_name": ngo_name,
-            "updates": [
-                {
-                    "id": u.id,
-                    "notes": u.notes,
-                    "photo_url": u.photo_url,
-                    "created_at": u.created_at.isoformat() if u.created_at else None,
-                }
-                for u in updates
-            ],
-        })
+
+    # 1. Get explicit NGO Stories
+    try:
+        ngo_stories = db.query(models.NGOStory).all()
+        for s in ngo_stories:
+            stories.append({
+                "id": s.id + 100000, # prevent id collision
+                "description": s.description,
+                "photo_url": s.photo_url,
+                "severity_label": "Success",
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "pet_name": s.pet_name or s.title,
+                "adoption_story": "",
+                "temperament": "",
+                "ngo_name": s.ngo_name,
+                "updates": []
+            })
+    except Exception:
+        pass
+
+    # 2. Get legacy resolved cases
+    try:
+        resolved_cases = db.query(models.Case).filter(models.Case.status == "Resolved").all()
+        for case in resolved_cases:
+            updates = (
+                db.query(models.CaseUpdate)
+                .filter(models.CaseUpdate.case_id == case.id)
+                .order_by(models.CaseUpdate.created_at.asc())
+                .all()
+            )
+            ngo_name = None
+            if case.accepted_by_ngo_id:
+                ngo = db.query(models.NGO).filter(models.NGO.id == case.accepted_by_ngo_id).first()
+                ngo_name = ngo.name if ngo else None
+            stories.append({
+                "id": case.id,
+                "description": case.description,
+                "photo_url": case.photo_url,
+                "severity_label": case.severity_label or "Low",
+                "created_at": case.created_at.isoformat() if case.created_at else None,
+                "pet_name": case.pet_name,
+                "adoption_story": case.adoption_story,
+                "temperament": case.temperament,
+                "ngo_name": ngo_name,
+                "updates": [
+                    {
+                        "id": u.id,
+                        "notes": u.notes,
+                        "photo_url": u.photo_url,
+                        "created_at": u.created_at.isoformat() if u.created_at else None,
+                    }
+                    for u in updates
+                ],
+            })
+    except Exception:
+        pass
+
+    # Sort descending by date
+    stories.sort(key=lambda x: x["created_at"] or "", reverse=True)
     return stories
 
 @app.post("/ngo/stories")
