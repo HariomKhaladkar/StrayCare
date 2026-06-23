@@ -43,6 +43,7 @@ class Case(Base):
     is_adoptable = Column(Boolean, default=False) # Add a default value
     adoption_story = Column(String, nullable=True)
     temperament = Column(String, nullable=True)
+    likes = Column(Integer, default=0) # Added for reactions
 
     # Feature 3: Severity Triaging
     severity_score = Column(Integer, default=0)
@@ -72,6 +73,7 @@ class NGOStory(Base):
     video_url = Column(String, nullable=True)
     ngo_id = Column(Integer, ForeignKey("ngos.id"))
     ngo_name = Column(String)
+    likes = Column(Integer, default=0) # Added for reactions
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Pet(Base):

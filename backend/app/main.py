@@ -655,7 +655,9 @@ def get_recovery_stories(db: Session = Depends(get_db)):
                 "adoption_story": "",
                 "temperament": "",
                 "ngo_name": s.ngo_name,
-                "updates": []
+                "updates": [],
+                "likes": s.likes or 0,
+                "type": "ngo_story"
             })
     except Exception:
         pass
@@ -693,6 +695,8 @@ def get_recovery_stories(db: Session = Depends(get_db)):
                     }
                     for u in updates
                 ],
+                "likes": case.likes or 0,
+                "type": "resolved_case"
             })
     except Exception:
         pass
@@ -700,6 +704,33 @@ def get_recovery_stories(db: Session = Depends(get_db)):
     # Sort descending by date
     stories.sort(key=lambda x: x["created_at"] or "", reverse=True)
     return stories
+
+class ReactRequest(BaseModel):
+    story_type: str
+
+@app.post("/stories/{story_id}/react")
+def react_to_story(story_id: int, req: ReactRequest, db: Session = Depends(get_db)):
+    """
+    Public: Increment likes for a recovery story.
+    """
+    if req.story_type == "ngo_story":
+        # Subtract 100000 to get real id, as we added 100000 in get_recovery_stories
+        real_id = story_id - 100000 if story_id >= 100000 else story_id
+        story = db.query(models.NGOStory).filter(models.NGOStory.id == real_id).first()
+        if not story:
+            raise HTTPException(status_code=404, detail="Story not found")
+        story.likes = (story.likes or 0) + 1
+        db.commit()
+        return {"success": True, "likes": story.likes}
+    elif req.story_type == "resolved_case":
+        case = db.query(models.Case).filter(models.Case.id == story_id).first()
+        if not case:
+            raise HTTPException(status_code=404, detail="Case not found")
+        case.likes = (case.likes or 0) + 1
+        db.commit()
+        return {"success": True, "likes": case.likes}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid story type")
 
 @app.post("/ngo/stories")
 async def post_ngo_story(
