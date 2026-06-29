@@ -1,0 +1,38 @@
+# Environment and Secrets
+.env
+*.env
+.env.*
+!.env.example
+
+# Firebase Service Account
+firebase-service-account.json
+*firebase*credentials*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Database
+*.db
+*.sqlite
+local.db
+
+# Uploads
+backend/uploads/
+
+# Node / Frontend
+node_modules/
+build/
+dist/
+
+# Android
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# OS
+.DS_Store
+Thumbs.db
